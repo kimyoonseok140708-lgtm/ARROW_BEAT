@@ -15,37 +15,37 @@ const TRACK_SEQUENCE = ["NEON RUSH", "MIDNIGHT DRIVE", "CYBER DUSK"];
 const difficultyConfig = {
   EASY: {
     label: "EASY",
-    speed: 1.0,
-    interval: 850,
-    noteCount: 36,
-    judgeWindow: { perfect: 60, great: 120, good: 170 },
-    musicTempo: 120,
+    speed: 0.95,
+    interval: 900,
+    noteCount: 32,
+    judgeWindow: { perfect: 70, great: 130, good: 180 },
+    musicTempo: 110,
     description: "Beginner Level",
   },
   NORMAL: {
     label: "NORMAL",
     speed: 1.25,
     interval: 660,
-    noteCount: 46,
+    noteCount: 48,
     judgeWindow: { perfect: 60, great: 110, good: 155 },
     musicTempo: 140,
     description: "Standard Level",
   },
   HARD: {
     label: "HARD",
-    speed: 1.5,
-    interval: 510,
-    noteCount: 58,
-    judgeWindow: { perfect: 55, great: 100, good: 145 },
+    speed: 1.55,
+    interval: 480,
+    noteCount: 64,
+    judgeWindow: { perfect: 55, great: 100, good: 140 },
     musicTempo: 160,
     description: "Advanced Level",
   },
   EXTREME: {
     label: "EXTREME",
-    speed: 1.8,
-    interval: 430,
-    noteCount: 72,
-    judgeWindow: { perfect: 50, great: 95, good: 135 },
+    speed: 1.85,
+    interval: 380,
+    noteCount: 80,
+    judgeWindow: { perfect: 50, great: 90, good: 130 },
     musicTempo: 180,
     description: "Expert Level",
   },
@@ -172,11 +172,26 @@ function updateBestDisplay() {
 
 function getRank() {
   const acc = state.accuracy;
+  if (acc >= 99) return "SS";
   if (acc >= 98) return "S";
   if (acc >= 95) return "A";
   if (acc >= 90) return "B";
-  if (acc >= 80) return "C";
-  return "D";
+  if (acc >= 85) return "C";
+  if (acc >= 80) return "D";
+  return "F";
+}
+
+function getRankColor(rank) {
+  const colors = {
+    "SS": "#ff00ff",
+    "S": "#ffff00",
+    "A": "#00ff00",
+    "B": "#00ffff",
+    "C": "#ff8800",
+    "D": "#ff0088",
+    "F": "#888888",
+  };
+  return colors[rank] || "#ffffff";
 }
 
 function updateAccuracy() {
@@ -218,7 +233,7 @@ function generatePattern() {
     const pick = pattern[Math.floor(Math.random() * pattern.length)];
     sequence.push(pick);
 
-    if (i % 4 === 0 && Math.random() > 0.45) {
+    if (i % 4 === 0 && Math.random() > 0.5) {
       sequence.push(pattern[(Math.floor(Math.random() * pattern.length) + 1) % pattern.length]);
     }
   }
@@ -300,7 +315,14 @@ function showJudgementPopup(text) {
   const popup = document.createElement("div");
   popup.className = "hit-popup";
   popup.textContent = text;
-  popup.style.color = text === "PERFECT" ? "#7ef7bf" : text === "GREAT" ? "#63f5ff" : text === "GOOD" ? "#ffe36b" : "#ff637d";
+  
+  let color = "#ffffff";
+  if (text === "PERFECT") color = "#7ef7bf";
+  else if (text === "GREAT") color = "#63f5ff";
+  else if (text === "GOOD") color = "#ffe36b";
+  else if (text === "MISS") color = "#ff637d";
+  
+  popup.style.color = color;
   noteField.appendChild(popup);
   setTimeout(() => popup.remove(), 660);
 }
@@ -341,9 +363,10 @@ function judgeNote(direction) {
   target.note.judged = true;
   target.note.element.classList.add("hit");
 
-  const scoreMap = { PERFECT: 1000, GREAT: 700, GOOD: 400 };
-  const comboBonus = Math.min(state.combo * 25, 500);
-  const award = scoreMap[judgement] + comboBonus;
+  const scoreMap = { PERFECT: 1100, GREAT: 700, GOOD: 350 };
+  const baseScore = scoreMap[judgement];
+  const comboBonus = Math.min(state.combo * 30, 600);
+  const award = baseScore + comboBonus;
   state.score += award;
 
   state.combo += 1;
@@ -355,10 +378,10 @@ function judgeNote(direction) {
     state.hitScoreTotal += 100;
   } else if (judgement === "GREAT") {
     state.great += 1;
-    state.hitScoreTotal += 90;
+    state.hitScoreTotal += 88;
   } else {
     state.good += 1;
-    state.hitScoreTotal += 70;
+    state.hitScoreTotal += 65;
   }
 
   showJudgementPopup(judgement);
@@ -432,7 +455,7 @@ function updatePerformanceChart() {
   const maxScore = Math.max(...samples.map((s) => s.score), 1000);
 
   chartCtx.strokeStyle = "rgba(99,245,255,0.9)";
-  chartCtx.lineWidth = 2;
+  chartCtx.lineWidth = 2.5;
   chartCtx.beginPath();
 
   samples.forEach((sample, index) => {
@@ -444,6 +467,7 @@ function updatePerformanceChart() {
   chartCtx.stroke();
 
   chartCtx.strokeStyle = "rgba(255,227,107,0.9)";
+  chartCtx.lineWidth = 2.5;
   chartCtx.beginPath();
   samples.forEach((sample, index) => {
     const x = (index / Math.max(1, samples.length - 1)) * width;
@@ -474,10 +498,12 @@ function finishGame() {
   cleanupGame();
   saveBestScore();
 
+  const rank = getRank();
   finalScoreEl.textContent = String(state.score);
   finalAccuracyEl.textContent = `${state.accuracy.toFixed(1)}%`;
   finalMaxComboEl.textContent = String(state.maxCombo);
-  finalRankEl.textContent = getRank();
+  finalRankEl.textContent = rank;
+  finalRankEl.style.color = getRankColor(rank);
   countPerfectEl.textContent = String(state.perfect);
   countGreatEl.textContent = String(state.great);
   countGoodEl.textContent = String(state.good);

@@ -605,6 +605,7 @@ button {
 
 .result-item strong {
   font-size: 1.1rem;
+  font-weight: 900;
 }
 
 .result-actions {
