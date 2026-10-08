@@ -1,3 +1,4 @@
+/* UI polish + responsive polish for ARROW BEAT */
 :root {
   --bg: #050816;
   --bg-2: #0b1024;
@@ -85,7 +86,7 @@ button {
   align-items: center;
   justify-content: center;
   z-index: 2;
-  animation: fadeScreen 0.2s ease;
+  animation: fadeScreen 0.22s ease;
 }
 
 .screen.active {
@@ -116,6 +117,7 @@ button {
   align-items: center;
   justify-content: center;
   gap: 18px;
+  border-radius: 18px;
 }
 
 .logo-wrap {
@@ -151,6 +153,7 @@ button {
   border: 1px solid rgba(255,227,107,0.35);
   background: rgba(255,227,107,0.06);
   padding: 6px 12px;
+  border-radius: 999px;
 }
 
 .pixel-btn {
@@ -167,6 +170,7 @@ button {
   cursor: pointer;
   transition: transform 0.15s ease, box-shadow 0.15s ease, filter 0.15s ease;
   touch-action: manipulation;
+  border-radius: 10px;
 }
 
 .pixel-btn:hover {
@@ -217,6 +221,12 @@ button {
   cursor: pointer;
   transition: all 0.15s ease;
   touch-action: manipulation;
+  border-radius: 8px;
+}
+
+.difficulty-btn:hover {
+  transform: translateY(-1px);
+  border-color: rgba(99,245,255,0.5);
 }
 
 .difficulty-btn.active {
@@ -270,6 +280,7 @@ button {
   letter-spacing: 0.12rem;
   cursor: pointer;
   touch-action: manipulation;
+  border-radius: 8px;
 }
 
 .hud {
@@ -287,6 +298,7 @@ button {
   padding: 10px 14px;
   text-align: center;
   box-shadow: inset 0 0 18px rgba(99,245,255,0.08);
+  border-radius: 10px;
 }
 
 .hud-box .label {
@@ -308,6 +320,7 @@ button {
   padding: 10px 12px 8px;
   background: rgba(8, 12, 21, 0.72);
   border: 2px solid rgba(99,245,255,0.2);
+  border-radius: 14px;
 }
 
 .chart-head {
@@ -326,11 +339,13 @@ button {
   height: 130px;
   background: rgba(4, 7, 16, 0.6);
   border: 1px solid rgba(255,255,255,0.06);
+  border-radius: 8px;
 }
 
 .playfield-shell {
   width: min(860px, 92%);
   padding: 16px 18px 18px;
+  border-radius: 18px;
 }
 
 .judgement-area {
@@ -341,6 +356,7 @@ button {
   border: 2px solid rgba(99,245,255,0.18);
   box-shadow: inset 0 0 30px rgba(99,245,255,0.06);
   overflow: hidden;
+  border-radius: 14px;
 }
 
 .top-scanline {
@@ -400,6 +416,11 @@ button {
   background: rgba(5, 8, 16, 0.14);
   cursor: pointer;
   touch-action: manipulation;
+  transition: transform 0.1s ease, filter 0.12s ease;
+}
+
+.lane:hover {
+  filter: brightness(1.08);
 }
 
 .lane.left { box-shadow: inset 0 0 22px rgba(103, 217, 255, 0.22); }
@@ -482,6 +503,7 @@ button {
   transition: all 0.12s ease;
   cursor: pointer;
   touch-action: manipulation;
+  border-radius: 8px;
 }
 
 .guide-key.active {
@@ -507,6 +529,7 @@ button {
   width: min(420px, 70%);
   padding: 26px 22px;
   text-align: center;
+  border-radius: 18px;
 }
 
 .pause-panel h2 {
@@ -528,6 +551,7 @@ button {
 .result-panel {
   width: min(700px, 88%);
   padding: 26px 22px 18px;
+  border-radius: 18px;
 }
 
 .result-panel h1 {
@@ -552,6 +576,7 @@ button {
   display: flex;
   justify-content: space-between;
   align-items: center;
+  border-radius: 10px;
 }
 
 .result-item span {
@@ -586,5 +611,27 @@ button {
 
   .result-grid {
     grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 520px) {
+  .pixel-btn {
+    min-width: 160px;
+    padding: 14px 18px;
+    font-size: 0.96rem;
+    letter-spacing: 0.12rem;
+  }
+
+  .hud {
+    gap: 8px;
+  }
+
+  .hud-box {
+    min-width: 88px;
+    padding: 8px 8px;
+  }
+
+  .song-indicator strong {
+    font-size: 0.95rem;
   }
 }

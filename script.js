@@ -10,6 +10,8 @@ const KEY_TO_LANE = {
   d: "right",
 };
 
+const TRACK_SEQUENCE = ["NEON RUSH", "MIDNIGHT DRIVE", "CYBER DUSK"];
+
 const difficultyConfig = {
   EASY: {
     label: "EASY",
@@ -70,6 +72,7 @@ const state = {
   particleCanvas: null,
   particles: [],
   currentTrack: "NEON RUSH",
+  trackIndex: 0,
 };
 
 const trackMap = {
@@ -105,6 +108,7 @@ const difficultyButtons = document.querySelectorAll(".difficulty-btn");
 const startBtn = document.getElementById("startBtn");
 const retryBtn = document.getElementById("retryBtn");
 const menuBtn = document.getElementById("menuBtn");
+const chartStatusEl = document.getElementById("chartStatus");
 
 function setDifficulty(name) {
   state.difficulty = name;
@@ -136,11 +140,15 @@ function updateBestDisplay() {
 }
 
 function getNextTrack() {
-  const tracks = Object.keys(trackMap);
-  const currentIndex = tracks.indexOf(state.currentTrack);
-  const nextIndex = (currentIndex + 1) % tracks.length;
-  state.currentTrack = tracks[nextIndex];
+  state.trackIndex = (state.trackIndex + 1) % TRACK_SEQUENCE.length;
+  state.currentTrack = TRACK_SEQUENCE[state.trackIndex];
   return state.currentTrack;
+}
+
+function updateChartStatus(text) {
+  if (chartStatusEl) {
+    chartStatusEl.textContent = text;
+  }
 }
 
 function updateHud() {
@@ -259,6 +267,7 @@ function resetGameState() {
   state.performanceHistory = [];
   noteField.innerHTML = "";
   pauseOverlay.classList.add("hidden");
+  updateChartStatus("LIVE");
   updateHud();
   updatePerformanceChart();
 }
@@ -421,9 +430,12 @@ function pushPerformanceSample() {
 }
 
 function finishGame() {
+  if (!state.playing) return;
+
   state.playing = false;
   state.paused = false;
   cancelAnimationFrame(state.animationId);
+  state.animationId = null;
   stopMusic();
   saveBestScore();
 
@@ -436,11 +448,18 @@ function finishGame() {
   countGoodEl.textContent = String(state.good);
   countMissEl.textContent = String(state.miss);
 
+  updateChartStatus("RESULT");
   showScreen(resultScreen);
 }
 
-function startGame() {
+function prepareStart() {
+  cancelAnimationFrame(state.animationId);
+  stopMusic();
   resetGameState();
+}
+
+function startGame() {
+  prepareStart();
   const track = getNextTrack();
   state.currentTrack = track;
   songNameEl.textContent = `${track} // ${state.difficulty}`;
@@ -450,6 +469,7 @@ function startGame() {
   state.playing = true;
   state.paused = false;
   startMusic();
+  updateChartStatus("LIVE");
   state.animationId = requestAnimationFrame(gameLoop);
 }
 
@@ -504,6 +524,12 @@ function handleKeyPress(event) {
   judgeNote(normalized);
 }
 
+function handleLanePointer(direction) {
+  if (!state.playing || state.paused) return;
+  flashLane(direction);
+  judgeNote(direction);
+}
+
 function bindTouchInputs() {
   document.querySelectorAll(".lane, .guide-key").forEach((element) => {
     const direction = element.dataset.key;
@@ -511,9 +537,7 @@ function bindTouchInputs() {
 
     element.addEventListener("pointerdown", (event) => {
       event.preventDefault();
-      if (!state.playing || state.paused) return;
-      flashLane(direction);
-      judgeNote(direction);
+      handleLanePointer(direction);
     });
   });
 }
@@ -594,9 +618,11 @@ function togglePause() {
 
   if (state.paused) {
     cancelAnimationFrame(state.animationId);
+    updateChartStatus("PAUSED");
     return;
   }
 
+  updateChartStatus("LIVE");
   state.lastTimestamp = 0;
   state.animationId = requestAnimationFrame(gameLoop);
 }
@@ -648,9 +674,8 @@ function initParticles() {
 
 function showTitleScreen() {
   updateBestDisplay();
-  if (!menuSongNameEl.textContent) {
-    menuSongNameEl.textContent = `${state.currentTrack} // BGM LOOP`;
-  }
+  menuSongNameEl.textContent = `${state.currentTrack || "NEON RUSH"} // BGM LOOP`;
+  updateChartStatus("READY");
   showScreen(startScreen);
 }
 
@@ -658,6 +683,7 @@ startBtn.addEventListener("click", startGame);
 retryBtn.addEventListener("click", startGame);
 menuBtn.addEventListener("click", () => {
   stopMusic();
+  state.playing = false;
   showTitleScreen();
 });
 pauseBtn.addEventListener("click", () => togglePause());
@@ -670,7 +696,8 @@ difficultyButtons.forEach((btn) => {
 document.addEventListener("keydown", handleKeyPress);
 
 setDifficulty(state.difficulty);
-state.currentTrack = "NEON RUSH";
+state.currentTrack = TRACK_SEQUENCE[0];
+state.trackIndex = 0;
 menuSongNameEl.textContent = `${state.currentTrack} // BGM LOOP`;
 initParticles();
 bindTouchInputs();
