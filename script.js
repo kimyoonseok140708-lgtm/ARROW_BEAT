@@ -49,7 +49,6 @@ const state = {
   difficulty: "NORMAL",
   playing: false,
   notes: [],
-  noteQueueIndex: 0,
   score: 0,
   combo: 0,
   maxCombo: 0,
@@ -66,14 +65,16 @@ const state = {
   audioCtx: null,
   musicInterval: null,
   beatIndex: 0,
-  currentPattern: [],
-  startAt: 0,
+  pattern: [],
+  performanceHistory: [],
 };
 
 const startScreen = document.getElementById("startScreen");
 const gameScreen = document.getElementById("gameScreen");
 const resultScreen = document.getElementById("resultScreen");
 const noteField = document.getElementById("noteField");
+const chartCanvas = document.getElementById("performanceChart");
+const chartCtx = chartCanvas.getContext("2d");
 
 const scoreEl = document.getElementById("score");
 const comboEl = document.getElementById("combo");
@@ -127,6 +128,7 @@ function updateHud() {
   scoreEl.textContent = String(state.score);
   comboEl.textContent = String(state.combo);
   accuracyEl.textContent = `${state.accuracy.toFixed(1)}%`;
+  updatePerformanceChart();
 }
 
 function getRank() {
@@ -136,77 +138,6 @@ function getRank() {
   if (acc >= 90) return "B";
   if (acc >= 80) return "C";
   return "D";
-}
-
-function judgeNote(direction) {
-  if (!state.playing) return;
-
-  const laneNotes = state.notes.filter((note) => !note.judged && note.direction === direction);
-  if (!laneNotes.length) {
-    handleMissByInput(direction);
-    return;
-  }
-
-  const target = laneNotes.reduce((best, note) => {
-    const delta = Math.abs(note.time - state.currentTime);
-    if (!best || delta < best.delta) return { note, delta };
-    return best;
-  }, null);
-
-  if (!target) {
-    handleMissByInput(direction);
-    return;
-  }
-
-  const delta = target.delta;
-  const windowCfg = difficultyConfig[state.difficulty].judgeWindow;
-
-  let judgement = "MISS";
-  if (delta <= windowCfg.perfect) judgement = "PERFECT";
-  else if (delta <= windowCfg.great) judgement = "GREAT";
-  else if (delta <= windowCfg.good) judgement = "GOOD";
-
-  if (judgement === "MISS") {
-    handleMissByInput(direction);
-    return;
-  }
-
-  target.note.judged = true;
-  target.note.element.classList.add("hit");
-  target.note.element.style.filter = "brightness(1.5)";
-
-  const scoreMap = { PERFECT: 1000, GREAT: 700, GOOD: 400 };
-  const comboBonus = Math.min(state.combo * 25, 500);
-  const award = scoreMap[judgement] + comboBonus;
-  state.score += award;
-
-  state.combo += 1;
-  state.maxCombo = Math.max(state.maxCombo, state.combo);
-  state.totalJudged += 1;
-  state.hitScoreTotal += judgement === "PERFECT" ? 100 : judgement === "GREAT" ? 90 : 70;
-
-  if (judgement === "PERFECT") state.perfect += 1;
-  if (judgement === "GREAT") state.great += 1;
-  if (judgement === "GOOD") state.good += 1;
-
-  showJudgementPopup(judgement);
-  updateAccuracy();
-  updateHud();
-
-  setTimeout(() => {
-    if (target.note.element && target.note.element.parentElement) {
-      target.note.element.remove();
-    }
-  }, 90);
-}
-
-function handleMissByInput(direction) {
-  state.combo = 0;
-  state.totalJudged += 1;
-  state.miss += 1;
-  showJudgementPopup("MISS");
-  updateAccuracy();
-  updateHud();
 }
 
 function updateAccuracy() {
@@ -220,10 +151,7 @@ function showJudgementPopup(text) {
   popup.className = "hit-popup";
   popup.textContent = text;
   popup.style.color = getJudgementColor(text);
-  popup.style.left = "50%";
-  popup.style.top = "46%";
   noteField.appendChild(popup);
-
   setTimeout(() => popup.remove(), 660);
 }
 
@@ -234,13 +162,9 @@ function getJudgementColor(text) {
   return "#ff637d";
 }
 
-function normalizePattern(pattern) {
-  return pattern.filter((item) => NOTE_KEYS.includes(item));
-}
-
-function generatePattern(difficulty) {
-  const cfg = difficultyConfig[difficulty];
-  const basePatterns = [
+function generatePattern() {
+  const cfg = difficultyConfig[state.difficulty];
+  const patterns = [
     ["left", "up", "down", "right"],
     ["left", "left", "right", "right"],
     ["up", "down", "up", "down"],
@@ -249,17 +173,18 @@ function generatePattern(difficulty) {
     ["down", "right", "left", "down"],
     ["left", "left", "up", "right"],
     ["right", "down", "left", "up"],
+    ["left", "down", "right", "up", "left"],
+    ["up", "left", "up", "right", "down"],
   ];
 
   const sequence = [];
   const noteCount = cfg.noteCount;
 
   for (let i = 0; i < noteCount; i++) {
-    const pattern = basePatterns[Math.floor(Math.random() * basePatterns.length)];
-    const cycleCount = i % 3 === 0 ? 2 : 1;
-    for (let c = 0; c < cycleCount; c++) {
-      const lane = pattern[Math.floor(Math.random() * pattern.length)];
-      sequence.push(lane);
+    const pattern = patterns[Math.floor(Math.random() * patterns.length)];
+    const burst = i % 4 === 0 ? 2 : 1;
+    for (let b = 0; b < burst; b++) {
+      sequence.push(pattern[Math.floor(Math.random() * pattern.length)]);
     }
   }
 
@@ -291,11 +216,10 @@ function createNote(direction, time) {
 
 function spawnNotes() {
   const cfg = difficultyConfig[state.difficulty];
-  const pattern = generatePattern(state.difficulty);
-  state.currentPattern = pattern;
+  state.pattern = generatePattern();
 
   let spawnTime = 900;
-  pattern.forEach((lane) => {
+  state.pattern.forEach((lane) => {
     createNote(lane, spawnTime);
     spawnTime += cfg.interval;
   });
@@ -305,7 +229,6 @@ function spawnNotes() {
 
 function resetGameState() {
   state.notes = [];
-  state.noteQueueIndex = 0;
   state.score = 0;
   state.combo = 0;
   state.maxCombo = 0;
@@ -319,8 +242,77 @@ function resetGameState() {
   state.currentTime = 0;
   state.lastTimestamp = 0;
   state.beatIndex = 0;
-  state.startAt = 0;
+  state.performanceHistory = [];
   noteField.innerHTML = "";
+  updateHud();
+  updatePerformanceChart();
+}
+
+function judgeNote(direction) {
+  if (!state.playing) return;
+
+  const laneNotes = state.notes.filter((note) => !note.judged && note.direction === direction);
+  if (!laneNotes.length) {
+    handleMissByInput();
+    return;
+  }
+
+  const target = laneNotes.reduce((best, note) => {
+    const delta = Math.abs(note.time - state.currentTime);
+    if (!best || delta < best.delta) return { note, delta };
+    return best;
+  }, null);
+
+  const delta = target ? target.delta : Infinity;
+  const windowCfg = difficultyConfig[state.difficulty].judgeWindow;
+
+  let judgement = "MISS";
+  if (delta <= windowCfg.perfect) judgement = "PERFECT";
+  else if (delta <= windowCfg.great) judgement = "GREAT";
+  else if (delta <= windowCfg.good) judgement = "GOOD";
+
+  if (judgement === "MISS") {
+    handleMissByInput();
+    return;
+  }
+
+  target.note.judged = true;
+  target.note.element.classList.add("hit");
+  target.note.element.style.filter = "brightness(1.5)";
+
+  const scoreMap = { PERFECT: 1000, GREAT: 700, GOOD: 400 };
+  const comboBonus = Math.min(state.combo * 25, 500);
+  const award = scoreMap[judgement] + comboBonus;
+  state.score += award;
+
+  state.combo += 1;
+  state.maxCombo = Math.max(state.maxCombo, state.combo);
+  state.totalJudged += 1;
+  state.hitScoreTotal += judgement === "PERFECT" ? 100 : judgement === "GREAT" ? 90 : 70;
+
+  if (judgement === "PERFECT") state.perfect += 1;
+  if (judgement === "GREAT") state.great += 1;
+  if (judgement === "GOOD") state.good += 1;
+
+  showJudgementPopup(judgement);
+  updateAccuracy();
+  pushPerformanceSample();
+  updateHud();
+
+  setTimeout(() => {
+    if (target.note.element && target.note.element.parentElement) {
+      target.note.element.remove();
+    }
+  }, 90);
+}
+
+function handleMissByInput() {
+  state.combo = 0;
+  state.totalJudged += 1;
+  state.miss += 1;
+  showJudgementPopup("MISS");
+  updateAccuracy();
+  pushPerformanceSample();
   updateHud();
 }
 
@@ -340,7 +332,9 @@ function animateNotes() {
       state.combo = 0;
       state.totalJudged += 1;
       state.miss += 1;
+      showJudgementPopup("MISS");
       updateAccuracy();
+      pushPerformanceSample();
       updateHud();
       return;
     }
@@ -349,22 +343,61 @@ function animateNotes() {
   });
 }
 
-function gameLoop(timestamp) {
-  if (!state.playing) return;
+function updatePerformanceChart() {
+  if (!chartCanvas || !chartCtx) return;
 
-  if (!state.lastTimestamp) state.lastTimestamp = timestamp;
-  const delta = timestamp - state.lastTimestamp;
-  state.lastTimestamp = timestamp;
-  state.currentTime += delta;
+  const width = chartCanvas.width;
+  const height = chartCanvas.height;
+  chartCtx.clearRect(0, 0, width, height);
 
-  animateNotes();
-
-  if (state.currentTime > state.notes.at(-1)?.time + 4000) {
-    finishGame();
-    return;
+  // Background grid
+  chartCtx.strokeStyle = "rgba(255,255,255,0.08)";
+  chartCtx.lineWidth = 1;
+  for (let i = 0; i <= 4; i++) {
+    const y = (height / 4) * i;
+    chartCtx.beginPath();
+    chartCtx.moveTo(0, y);
+    chartCtx.lineTo(width, y);
+    chartCtx.stroke();
   }
 
-  state.animationId = requestAnimationFrame(gameLoop);
+  const samples = state.performanceHistory.length ? state.performanceHistory : [{ score: 0, accuracy: 100 }];
+  const maxScore = Math.max(...samples.map((s) => s.score), 1000);
+
+  chartCtx.strokeStyle = "rgba(99,245,255,0.9)";
+  chartCtx.lineWidth = 2;
+  chartCtx.beginPath();
+
+  samples.forEach((sample, index) => {
+    const x = (index / Math.max(1, samples.length - 1)) * width;
+    const y = height - (sample.score / maxScore) * (height - 12) - 6;
+    if (index === 0) chartCtx.moveTo(x, y);
+    else chartCtx.lineTo(x, y);
+  });
+  chartCtx.stroke();
+
+  chartCtx.strokeStyle = "rgba(255,227,107,0.9)";
+  chartCtx.beginPath();
+  samples.forEach((sample, index) => {
+    const x = (index / Math.max(1, samples.length - 1)) * width;
+    const y = height - ((sample.accuracy || 100) / 100) * (height - 12) - 6;
+    if (index === 0) chartCtx.moveTo(x, y);
+    else chartCtx.lineTo(x, y);
+  });
+  chartCtx.stroke();
+}
+
+function pushPerformanceSample() {
+  state.performanceHistory.push({
+    score: state.score,
+    accuracy: state.accuracy,
+  });
+
+  if (state.performanceHistory.length > 18) {
+    state.performanceHistory.shift();
+  }
+
+  updatePerformanceChart();
 }
 
 function finishGame() {
@@ -391,6 +424,24 @@ function startGame() {
   showScreen(gameScreen);
   state.playing = true;
   startMusic();
+  state.animationId = requestAnimationFrame(gameLoop);
+}
+
+function gameLoop(timestamp) {
+  if (!state.playing) return;
+
+  if (!state.lastTimestamp) state.lastTimestamp = timestamp;
+  const delta = timestamp - state.lastTimestamp;
+  state.lastTimestamp = timestamp;
+  state.currentTime += delta;
+
+  animateNotes();
+
+  if (state.currentTime > state.notes[state.notes.length - 1]?.time + 4000) {
+    finishGame();
+    return;
+  }
+
   state.animationId = requestAnimationFrame(gameLoop);
 }
 
@@ -453,7 +504,6 @@ function playTone(frequency, duration = 0.12, volume = 0.06, type = "square") {
 }
 
 function playMusicStep() {
-  const config = difficultyConfig[state.difficulty];
   const pattern = [
     [220, 330, 440, 330],
     [277, 415, 554, 415],

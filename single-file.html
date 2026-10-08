@@ -1,0 +1,248 @@
+<!DOCTYPE html>
+<html lang="ko">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>ARROW BEAT</title>
+    <style>
+      :root {
+        --bg: #050816;
+        --bg2: #0c1225;
+        --panel: rgba(13, 18, 31, 0.88);
+        --cyan: #63f5ff;
+        --purple: #cb7dff;
+        --pink: #ff7eb7;
+        --green: #7ef7bf;
+        --yellow: #ffe36b;
+        --red: #ff637d;
+        --text: #ebf8ff;
+        --muted: #94aac0;
+      }
+      * { box-sizing: border-box; margin: 0; padding: 0; }
+      html, body {
+        width: 100%; height: 100%; overflow: hidden;
+        background: radial-gradient(circle at 50% 10%, rgba(99,245,255,0.18), transparent 18%), linear-gradient(180deg, #040712, #0a1120);
+        color: var(--text); font-family: sans-serif;
+      }
+      body { display: flex; align-items: center; justify-content: center; }
+      .game-shell {
+        position: relative; width: min(1100px, 100vw); height: min(760px, 100vh); overflow: hidden;
+        background: linear-gradient(180deg, rgba(5,8,22,0.9), rgba(10,14,26,0.94));
+        box-shadow: 0 0 0 3px rgba(99,245,255,0.26), 0 0 26px rgba(99,245,255,0.18), inset 0 0 48px rgba(99,245,255,0.06);
+      }
+      .bg-glow {
+        position: absolute; inset: 0; background: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 800"><defs><linearGradient id="g" x1="0" x2="1"><stop offset="0%" stop-color="%2363f5ff" stop-opacity="0.2"/><stop offset="50%" stop-color="%23cb7dff" stop-opacity="0.18"/><stop offset="100%" stop-color="%2363f5ff" stop-opacity="0.2"/></linearGradient></defs><g opacity="0.35" stroke="url(%23g)" stroke-width="1"><path d="M0 100H1200M0 200H1200M0 300H1200M0 400H1200M0 500H1200M0 600H1200M0 700H1200"/><path d="M150 0V800M300 0V800M450 0V800M600 0V800M750 0V800M900 0V800M1050 0V800"/></g></svg>') center/cover no-repeat; opacity: .8;
+      }
+      .screen { position: absolute; inset: 0; display: none; align-items: center; justify-content: center; }
+      .screen.active { display: flex; }
+      .pixel-panel { background: linear-gradient(180deg, rgba(12,18,31,0.88), rgba(5,8,17,0.94)); border: 3px solid rgba(99,245,255,0.25); box-shadow: 0 0 0 3px rgba(99,245,255,0.1), inset 0 0 12px rgba(99,245,255,0.12), 0 15px 30px rgba(0,0,0,0.35); }
+      #startScreen { padding: 24px; }
+      .title-panel { width: min(820px, 90%); min-height: 520px; padding: 28px 20px 34px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 18px; }
+      .logo-wrap { display: flex; align-items: center; justify-content: center; width: 100%; animation: logoFloat 2.5s ease-in-out infinite alternate; }
+      @keyframes logoFloat { 0% { transform: translateY(0); } 100% { transform: translateY(-8px); } }
+      .logo-image { width: min(640px, 80%); filter: drop-shadow(0 0 14px rgba(99,245,255,0.8)); }
+      .start-controls { display: flex; flex-direction: column; align-items: center; gap: 18px; }
+      .pixel-btn { appearance: none; background: rgba(15,19,34,0.92); color: var(--text); border: 3px solid rgba(99,245,255,0.6); box-shadow: 0 0 16px rgba(99,245,255,0.18); padding: 16px 26px; min-width: 200px; font-weight: 900; font-size: 1.1rem; letter-spacing: .16rem; cursor: pointer; }
+      .pixel-btn.primary { border-color: var(--purple); background: linear-gradient(180deg, rgba(203,125,255,0.32), rgba(14,18,34,0.9)); }
+      .difficulty-panel, .best-score-box { display: flex; flex-direction: column; align-items: center; gap: 12px; }
+      .panel-label { color: var(--muted); letter-spacing: .16rem; font-size: .72rem; }
+      .difficulty-buttons { display: flex; flex-wrap: wrap; justify-content: center; gap: 10px; }
+      .difficulty-btn { appearance: none; background: rgba(14,17,28,0.92); color: var(--text); border: 2px solid rgba(255,255,255,0.12); padding: 10px 14px; min-width: 110px; font-weight: 700; letter-spacing: .08rem; cursor: pointer; }
+      .difficulty-btn.active { border-color: var(--yellow); color: var(--yellow); box-shadow: 0 0 14px rgba(255,227,107,0.42); }
+      .best-score-box strong { font-size: 1.7rem; color: var(--cyan); text-shadow: 0 0 12px rgba(99,245,255,0.8); }
+      #gameScreen { flex-direction: column; padding: 18px 20px 16px; }
+      .hud { width: min(820px, 90%); display: flex; gap: 12px; margin: 0 auto 18px auto; }
+      .hud-box { flex: 1; min-width: 120px; background: rgba(11,16,30,0.72); border: 2px solid rgba(99,245,255,0.22); padding: 10px 14px; text-align: center; box-shadow: inset 0 0 18px rgba(99,245,255,0.08); }
+      .hud-box .label { display: block; color: var(--muted); letter-spacing: .14rem; font-size: .7rem; margin-bottom: 6px; }
+      .hud-box span:last-child { font-size: clamp(1.2rem, 2vw, 1.9rem); font-weight: 900; }
+      .graph-panel { width: min(820px, 90%); margin: 0 auto 16px auto; padding: 10px 12px 8px; background: rgba(8,12,21,0.72); border: 2px solid rgba(99,245,255,0.2); }
+      .chart-head { display: flex; justify-content: space-between; align-items: center; color: var(--muted); font-size: .68rem; letter-spacing: .12rem; margin-bottom: 8px; }
+      #performanceChart { display: block; width: 100%; height: 130px; background: rgba(4,7,16,0.6); border: 1px solid rgba(255,255,255,0.06); }
+      .playfield-shell { width: min(860px, 92%); padding: 16px 18px 18px; }
+      .judgement-area { position: relative; width: 100%; height: 610px; background: linear-gradient(180deg, rgba(2,4,12,0.84), rgba(8,12,20,0.96)), repeating-linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.02) 2px, transparent 2px, transparent 18px); border: 2px solid rgba(99,245,255,0.18); box-shadow: inset 0 0 30px rgba(99,245,255,0.06); overflow: hidden; }
+      .top-scanline { position: absolute; top: 38px; left: 0; right: 0; height: 2px; background: linear-gradient(90deg, transparent, rgba(99,245,255,0.7), transparent); box-shadow: 0 0 16px rgba(99,245,255,0.44); }
+      .judgement-line { position: absolute; left: 0; right: 0; bottom: 115px; height: 4px; background: linear-gradient(90deg, transparent, rgba(234,248,255,0.95), transparent); box-shadow: 0 0 18px rgba(234,248,255,0.8); }
+      .note-field { position: absolute; inset: 0; }
+      .lane-labels, .lanes { position: absolute; inset: 0; display: grid; grid-template-columns: repeat(4, 1fr); }
+      .lane-labels { pointer-events: none; top: 18px; height: 35px; align-items: center; }
+      .lane-name { display: flex; justify-content: center; align-items: center; font-weight: 900; letter-spacing: .08rem; color: rgba(255,255,255,0.9); text-shadow: 0 0 10px rgba(99,245,255,0.6); }
+      .lane { position: relative; border-left: 1px solid rgba(255,255,255,0.08); border-right: 1px solid rgba(255,255,255,0.06); background: rgba(5,8,16,0.14); }
+      .lane.left { box-shadow: inset 0 0 22px rgba(103,217,255,0.22); }
+      .lane.up { box-shadow: inset 0 0 22px rgba(126,247,191,0.22); }
+      .lane.down { box-shadow: inset 0 0 22px rgba(255,216,107,0.2); }
+      .lane.right { box-shadow: inset 0 0 22px rgba(255,126,183,0.2); }
+      .lane-accent { position: absolute; left: 20%; right: 20%; top: 0; bottom: 0; background: linear-gradient(180deg, transparent, rgba(255,255,255,0.04), transparent); }
+      .note { position: absolute; width: 76px; height: 16px; left: 50%; transform: translateX(-50%); border-radius: 4px; box-shadow: 0 0 16px rgba(255,255,255,0.2); }
+      .note::before { content: ""; position: absolute; inset: -2px; border: 2px solid rgba(255,255,255,0.25); border-radius: 5px; }
+      .note.left { background: linear-gradient(180deg, #7fe8ff, #39a7ff); }
+      .note.up { background: linear-gradient(180deg, #a4ffca, #53d98b); }
+      .note.down { background: linear-gradient(180deg, #ffe89f, #ffc857); }
+      .note.right { background: linear-gradient(180deg, #ffadd7, #ff7aaf); }
+      .note.hit { filter: brightness(1.5) saturate(1.2); }
+      .hit-popup { position: absolute; left: 50%; top: 50%; transform: translate(-50%,-50%); font-size: 1.5rem; font-weight: 900; letter-spacing: .08rem; text-shadow: 0 0 12px rgba(255,255,255,0.7); animation: popupFloat .7s ease forwards; pointer-events: none; }
+      @keyframes popupFloat { 0% { opacity: 0; transform: translate(-50%, 0) scale(.8); } 20% { opacity: 1; } 100% { opacity: 0; transform: translate(-50%, -30px) scale(1.1); } }
+      .control-guide { display: grid; grid-template-columns: repeat(4, minmax(80px,1fr)); gap: 12px; margin-top: 18px; }
+      .guide-key { display: flex; justify-content: center; align-items: center; gap: 12px; background: rgba(10,14,25,0.84); border: 2px solid rgba(255,255,255,0.12); padding: 12px 10px; font-weight: 800; letter-spacing: .08rem; transition: all .12s ease; }
+      .guide-key.active { border-color: var(--cyan); box-shadow: 0 0 16px rgba(99,245,255,0.4); }
+      #resultScreen { background: rgba(7,10,18,0.7); }
+      .result-panel { width: min(700px, 88%); padding: 26px 22px 18px; }
+      .result-panel h1 { text-align: center; font-size: clamp(2.2rem, 4vw, 3.5rem); letter-spacing: .18rem; margin-bottom: 18px; color: var(--yellow); text-shadow: 0 0 14px rgba(255,227,107,0.5); }
+      .result-grid { display: grid; grid-template-columns: repeat(2, minmax(140px,1fr)); gap: 12px 14px; }
+      .result-item { background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.08); padding: 12px 14px; display: flex; justify-content: space-between; align-items: center; }
+      .result-item span { color: var(--muted); letter-spacing: .08rem; }
+      .result-item strong { font-size: 1.1rem; }
+      .result-actions { margin-top: 24px; display: flex; justify-content: center; gap: 16px; }
+      @media (max-width: 760px) { .game-shell { width: 100vw; height: 100vh; } .title-panel { min-height: 420px; } .judgement-area { height: 500px; } .result-grid { grid-template-columns: 1fr; } }
+    </style>
+  </head>
+  <body>
+    <div class="game-shell">
+      <div class="bg-glow"></div>
+      <div id="startScreen" class="screen active">
+        <div class="title-panel pixel-panel">
+          <div class="logo-wrap">
+            <svg class="logo-image" viewBox="0 0 920 260" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="ARROW BEAT logo">
+              <defs>
+                <linearGradient id="g1" x1="0" x2="1"><stop offset="0%" stop-color="#63f5ff"/><stop offset="40%" stop-color="#7ef7bf"/><stop offset="100%" stop-color="#cb7dff"/></linearGradient>
+                <linearGradient id="g2" x1="0" x2="1"><stop offset="0%" stop-color="#ffe36b"/><stop offset="100%" stop-color="#ff7eb7"/></linearGradient>
+              </defs>
+              <g fill="none" stroke-linecap="square" stroke-linejoin="miter">
+                <path d="M70 180L120 60L170 180Z" fill="#63f5ff" opacity="0.9"/>
+                <path d="M180 180L230 60L280 180Z" fill="#7ef7bf" opacity="0.9"/>
+                <path d="M290 180L340 60L390 180Z" fill="#ffe36b" opacity="0.9"/>
+                <path d="M400 180L450 60L500 180Z" fill="#ff7eb7" opacity="0.9"/>
+              </g>
+              <g font-family="Verdana, Arial, sans-serif" font-weight="900" letter-spacing="6" fill="url(#g1)">
+                <text x="540" y="126" font-size="82">ARROW</text>
+                <text x="540" y="208" font-size="82" fill="url(#g2)">BEAT</text>
+              </g>
+            </svg>
+          </div>
+          <div class="start-controls">
+            <button id="startBtn" class="pixel-btn primary">START</button>
+            <div class="difficulty-panel">
+              <span class="panel-label">DIFFICULTY</span>
+              <div class="difficulty-buttons">
+                <button class="difficulty-btn active" data-difficulty="EASY">EASY</button>
+                <button class="difficulty-btn" data-difficulty="NORMAL">NORMAL</button>
+                <button class="difficulty-btn" data-difficulty="HARD">HARD</button>
+                <button class="difficulty-btn" data-difficulty="EXTREME">EXTREME</button>
+              </div>
+            </div>
+            <div class="best-score-box">
+              <span class="panel-label">BEST SCORE</span>
+              <strong id="bestScoreDisplay">0</strong>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div id="gameScreen" class="screen">
+        <div class="hud">
+          <div class="hud-box"><span class="label">SCORE</span><span id="score">0</span></div>
+          <div class="hud-box"><span class="label">COMBO</span><span id="combo">0</span></div>
+          <div class="hud-box"><span class="label">ACCURACY</span><span id="accuracy">100.0%</span></div>
+        </div>
+        <div class="graph-panel pixel-panel">
+          <div class="chart-head"><span>PLAY DATA</span><span id="chartStatus">LIVE</span></div>
+          <canvas id="performanceChart" width="840" height="130"></canvas>
+        </div>
+        <div class="playfield-shell pixel-panel">
+          <div class="judgement-area">
+            <div class="top-scanline"></div>
+            <div class="judgement-line"></div>
+            <div id="noteField" class="note-field"></div>
+            <div class="lane-labels">
+              <div class="lane-name left">← A</div>
+              <div class="lane-name up">↑ W</div>
+              <div class="lane-name down">↓ S</div>
+              <div class="lane-name right">→ D</div>
+            </div>
+            <div class="lanes">
+              <div class="lane left" data-key="left"><div class="lane-accent"></div></div>
+              <div class="lane up" data-key="up"><div class="lane-accent"></div></div>
+              <div class="lane down" data-key="down"><div class="lane-accent"></div></div>
+              <div class="lane right" data-key="right"><div class="lane-accent"></div></div>
+            </div>
+          </div>
+          <div class="control-guide">
+            <div class="guide-key" data-key="left"><span>←</span><span>A</span></div>
+            <div class="guide-key" data-key="up"><span>↑</span><span>W</span></div>
+            <div class="guide-key" data-key="down"><span>↓</span><span>S</span></div>
+            <div class="guide-key" data-key="right"><span>→</span><span>D</span></div>
+          </div>
+        </div>
+      </div>
+
+      <div id="resultScreen" class="screen">
+        <div class="result-panel pixel-panel">
+          <h1>RESULT</h1>
+          <div class="result-grid">
+            <div class="result-item"><span>SCORE</span><strong id="finalScore">0</strong></div>
+            <div class="result-item"><span>ACCURACY</span><strong id="finalAccuracy">0%</strong></div>
+            <div class="result-item"><span>MAX COMBO</span><strong id="finalMaxCombo">0</strong></div>
+            <div class="result-item"><span>RANK</span><strong id="finalRank">-</strong></div>
+            <div class="result-item"><span>PERFECT</span><strong id="countPerfect">0</strong></div>
+            <div class="result-item"><span>GREAT</span><strong id="countGreat">0</strong></div>
+            <div class="result-item"><span>GOOD</span><strong id="countGood">0</strong></div>
+            <div class="result-item"><span>MISS</span><strong id="countMiss">0</strong></div>
+          </div>
+          <div class="result-actions">
+            <button id="retryBtn" class="pixel-btn primary">RETRY</button>
+            <button id="menuBtn" class="pixel-btn">MENU</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      const NOTE_KEYS = ["left", "up", "down", "right"];
+      const KEY_TO_LANE = { ArrowLeft: 'left', a: 'left', ArrowUp: 'up', w: 'up', ArrowDown: 'down', s: 'down', ArrowRight: 'right', d: 'right' };
+      const difficultyConfig = {
+        EASY: { speed: 1.0, interval: 850, noteCount: 36, judgeWindow: { perfect: 60, great: 120, good: 170 }, musicTempo: 120 },
+        NORMAL: { speed: 1.25, interval: 660, noteCount: 46, judgeWindow: { perfect: 60, great: 110, good: 155 }, musicTempo: 140 },
+        HARD: { speed: 1.5, interval: 510, noteCount: 58, judgeWindow: { perfect: 55, great: 100, good: 145 }, musicTempo: 160 },
+        EXTREME: { speed: 1.8, interval: 430, noteCount: 72, judgeWindow: { perfect: 50, great: 95, good: 135 }, musicTempo: 180 }
+      };
+      const state = { difficulty: 'NORMAL', playing: false, notes: [], score: 0, combo: 0, maxCombo: 0, accuracy: 100, totalJudged: 0, hitScoreTotal: 0, perfect: 0, great: 0, good: 0, miss: 0, currentTime: 0, lastTimestamp: 0, animationId: null, audioCtx: null, musicInterval: null, beatIndex: 0, performanceHistory: [] };
+      const startScreen = document.getElementById('startScreen'); const gameScreen = document.getElementById('gameScreen'); const resultScreen = document.getElementById('resultScreen');
+      const noteField = document.getElementById('noteField'); const chartCanvas = document.getElementById('performanceChart'); const chartCtx = chartCanvas.getContext('2d');
+      const scoreEl = document.getElementById('score'); const comboEl = document.getElementById('combo'); const accuracyEl = document.getElementById('accuracy'); const bestScoreDisplay = document.getElementById('bestScoreDisplay');
+      const finalScoreEl = document.getElementById('finalScore'); const finalAccuracyEl = document.getElementById('finalAccuracy'); const finalMaxComboEl = document.getElementById('finalMaxCombo'); const finalRankEl = document.getElementById('finalRank');
+      const countPerfectEl = document.getElementById('countPerfect'); const countGreatEl = document.getElementById('countGreat'); const countGoodEl = document.getElementById('countGood'); const countMissEl = document.getElementById('countMiss');
+      const difficultyButtons = document.querySelectorAll('.difficulty-btn'); const startBtn = document.getElementById('startBtn'); const retryBtn = document.getElementById('retryBtn'); const menuBtn = document.getElementById('menuBtn');
+
+      function setDifficulty(name) { state.difficulty = name; difficultyButtons.forEach(btn => btn.classList.toggle('active', btn.dataset.difficulty === name)); }
+      function showScreen(target) { [startScreen, gameScreen, resultScreen].forEach(screen => screen.classList.toggle('active', screen === target)); }
+      function getBestScore() { return Number(localStorage.getItem('arrowBeatBestScore') || 0); }
+      function saveBestScore() { if (state.score > getBestScore()) localStorage.setItem('arrowBeatBestScore', String(state.score)); bestScoreDisplay.textContent = String(getBestScore()); }
+      function updateBestDisplay() { bestScoreDisplay.textContent = String(getBestScore()); }
+      function updateHud() { scoreEl.textContent = String(state.score); comboEl.textContent = String(state.combo); accuracyEl.textContent = `${state.accuracy.toFixed(1)}%`; updatePerformanceChart(); }
+      function getRank() { const acc = state.accuracy; if (acc >= 98) return 'S'; if (acc >= 95) return 'A'; if (acc >= 90) return 'B'; if (acc >= 80) return 'C'; return 'D'; }
+      function updateAccuracy() { const denominator = Math.max(1, state.totalJudged); const value = ((state.hitScoreTotal / (denominator * 100)) * 100); state.accuracy = Number.isFinite(value) ? Math.min(100, value) : 100; }
+      function showJudgementPopup(text) { const popup = document.createElement('div'); popup.className = 'hit-popup'; popup.textContent = text; popup.style.color = text === 'PERFECT' ? '#7ef7bf' : text === 'GREAT' ? '#63f5ff' : text === 'GOOD' ? '#ffe36b' : '#ff637d'; noteField.appendChild(popup); setTimeout(() => popup.remove(), 660); }
+      function generatePattern() { const cfg = difficultyConfig[state.difficulty]; const patterns = [["left","up","down","right"],["left","left","right","right"],["up","down","up","down"],["left","up","right","down"],["left","up","up","right"],["down","right","left","down"],["left","left","up","right"],["right","down","left","up"],["left","down","right","up","left"],["up","left","up","right","down"]]; const sequence = []; for (let i = 0; i < cfg.noteCount; i++) { const pattern = patterns[Math.floor(Math.random() * patterns.length)]; const burst = i % 4 === 0 ? 2 : 1; for (let b = 0; b < burst; b++) sequence.push(pattern[Math.floor(Math.random() * pattern.length)]); } return sequence.slice(0, cfg.noteCount); }
+      function createNote(direction, time) { const note = document.createElement('div'); note.className = `note ${direction}`; note.dataset.direction = direction; const laneIndex = NOTE_KEYS.indexOf(direction); const leftStyle = ((laneIndex + 0.5) / NOTE_KEYS.length) * 100; note.style.left = `${leftStyle}%`; note.style.top = '-20px'; noteField.appendChild(note); state.notes.push({ direction, time, judged: false, element: note }); }
+      function spawnNotes() { const cfg = difficultyConfig[state.difficulty]; const pattern = generatePattern(); let spawnTime = 900; pattern.forEach(lane => { createNote(lane, spawnTime); spawnTime += cfg.interval; }); state.notes.sort((a,b) => a.time - b.time); }
+      function resetGameState() { state.notes = []; state.score = 0; state.combo = 0; state.maxCombo = 0; state.accuracy = 100; state.totalJudged = 0; state.hitScoreTotal = 0; state.perfect = 0; state.great = 0; state.good = 0; state.miss = 0; state.currentTime = 0; state.lastTimestamp = 0; state.beatIndex = 0; state.performanceHistory = []; noteField.innerHTML = ''; updateHud(); updatePerformanceChart(); }
+      function judgeNote(direction) { if (!state.playing) return; const laneNotes = state.notes.filter(note => !note.judged && note.direction === direction); if (!laneNotes.length) { handleMissByInput(); return; } const target = laneNotes.reduce((best, note) => { const delta = Math.abs(note.time - state.currentTime); if (!best || delta < best.delta) return { note, delta }; return best; }, null); const delta = target ? target.delta : Infinity; const windowCfg = difficultyConfig[state.difficulty].judgeWindow; let judgement = 'MISS'; if (delta <= windowCfg.perfect) judgement = 'PERFECT'; else if (delta <= windowCfg.great) judgement = 'GREAT'; else if (delta <= windowCfg.good) judgement = 'GOOD'; if (judgement === 'MISS') { handleMissByInput(); return; } target.note.judged = true; target.note.element.classList.add('hit'); target.note.element.style.filter = 'brightness(1.5)'; const scoreMap = { PERFECT: 1000, GREAT: 700, GOOD: 400 }; const comboBonus = Math.min(state.combo * 25, 500); const award = scoreMap[judgement] + comboBonus; state.score += award; state.combo += 1; state.maxCombo = Math.max(state.maxCombo, state.combo); state.totalJudged += 1; state.hitScoreTotal += judgement === 'PERFECT' ? 100 : judgement === 'GREAT' ? 90 : 70; if (judgement === 'PERFECT') state.perfect += 1; if (judgement === 'GREAT') state.great += 1; if (judgement === 'GOOD') state.good += 1; showJudgementPopup(judgement); updateAccuracy(); pushPerformanceSample(); updateHud(); setTimeout(() => { if (target.note.element && target.note.element.parentElement) target.note.element.remove(); }, 90); }
+      function handleMissByInput() { state.combo = 0; state.totalJudged += 1; state.miss += 1; showJudgementPopup('MISS'); updateAccuracy(); pushPerformanceSample(); updateHud(); }
+      function animateNotes() { const cfg = difficultyConfig[state.difficulty]; const travelDuration = 1900 / cfg.speed; state.notes.forEach(note => { if (note.judged) return; const progress = (state.currentTime - note.time) / travelDuration; const y = -20 + progress * 500; if (y > 540) { note.judged = true; note.element.remove(); state.combo = 0; state.totalJudged += 1; state.miss += 1; showJudgementPopup('MISS'); updateAccuracy(); pushPerformanceSample(); updateHud(); return; } note.element.style.top = `${Math.max(0, y)}px`; }); }
+      function updatePerformanceChart() { const width = chartCanvas.width; const height = chartCanvas.height; chartCtx.clearRect(0, 0, width, height); chartCtx.strokeStyle = 'rgba(255,255,255,0.08)'; chartCtx.lineWidth = 1; for (let i = 0; i <= 4; i++) { const y = (height / 4) * i; chartCtx.beginPath(); chartCtx.moveTo(0, y); chartCtx.lineTo(width, y); chartCtx.stroke(); } const samples = state.performanceHistory.length ? state.performanceHistory : [{ score: 0, accuracy: 100 }]; const maxScore = Math.max(...samples.map(s => s.score), 1000); chartCtx.strokeStyle = 'rgba(99,245,255,0.9)'; chartCtx.lineWidth = 2; chartCtx.beginPath(); samples.forEach((sample, index) => { const x = (index / Math.max(1, samples.length - 1)) * width; const y = height - (sample.score / maxScore) * (height - 12) - 6; if (index === 0) chartCtx.moveTo(x, y); else chartCtx.lineTo(x, y); }); chartCtx.stroke(); chartCtx.strokeStyle = 'rgba(255,227,107,0.9)'; chartCtx.beginPath(); samples.forEach((sample, index) => { const x = (index / Math.max(1, samples.length - 1)) * width; const y = height - ((sample.accuracy || 100) / 100) * (height - 12) - 6; if (index === 0) chartCtx.moveTo(x, y); else chartCtx.lineTo(x, y); }); chartCtx.stroke(); }
+      function pushPerformanceSample() { state.performanceHistory.push({ score: state.score, accuracy: state.accuracy }); if (state.performanceHistory.length > 18) state.performanceHistory.shift(); updatePerformanceChart(); }
+      function finishGame() { state.playing = false; cancelAnimationFrame(state.animationId); stopMusic(); saveBestScore(); finalScoreEl.textContent = String(state.score); finalAccuracyEl.textContent = `${state.accuracy.toFixed(1)}%`; finalMaxComboEl.textContent = String(state.maxCombo); finalRankEl.textContent = getRank(); countPerfectEl.textContent = String(state.perfect); countGreatEl.textContent = String(state.great); countGoodEl.textContent = String(state.good); countMissEl.textContent = String(state.miss); showScreen(resultScreen); }
+      function startGame() { resetGameState(); spawnNotes(); showScreen(gameScreen); state.playing = true; startMusic(); state.animationId = requestAnimationFrame(gameLoop); }
+      function getActiveLaneElement(direction) { return document.querySelector(`.lane[data-key="${direction}"]`); }
+      function flashLane(direction) { const lane = getActiveLaneElement(direction); const guide = document.querySelector(`.guide-key[data-key="${direction}"]`); if (lane) lane.style.filter = 'brightness(1.45)'; if (guide) guide.classList.add('active'); setTimeout(() => { if (lane) lane.style.filter = ''; if (guide) guide.classList.remove('active'); }, 120); }
+      function handleKeyPress(event) { const key = event.key.toLowerCase(); const normalized = KEY_TO_LANE[event.key] || KEY_TO_LANE[key] || null; if (!normalized) return; event.preventDefault(); flashLane(normalized); judgeNote(normalized); }
+      function initAudio() { const AudioCtx = window.AudioContext || window.webkitAudioContext; if (!AudioCtx) return null; if (!state.audioCtx) state.audioCtx = new AudioCtx(); return state.audioCtx; }
+      function playTone(frequency, duration = 0.12, volume = 0.06, type = 'square') { const audioCtx = initAudio(); if (!audioCtx) return; const oscillator = audioCtx.createOscillator(); const gainNode = audioCtx.createGain(); oscillator.type = type; oscillator.frequency.value = frequency; gainNode.gain.setValueAtTime(0.0001, audioCtx.currentTime); gainNode.gain.exponentialRampToValueAtTime(volume, audioCtx.currentTime + 0.02); gainNode.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime + duration); oscillator.connect(gainNode); gainNode.connect(audioCtx.destination); oscillator.start(audioCtx.currentTime); oscillator.stop(audioCtx.currentTime + duration); }
+      function playMusicStep() { const pattern = [[220,330,440,330],[277,415,554,415],[164.81,246.94,329.63,246.94],[196,293.66,392,293.66]]; const row = pattern[state.beatIndex % pattern.length]; row.forEach((freq, idx) => { const delay = idx * 0.03; setTimeout(() => playTone(freq, 0.12, 0.05 + idx * 0.007, idx % 2 ? 'triangle' : 'square'), delay * 1000); }); state.beatIndex += 1; }
+      function startMusic() { const audioCtx = initAudio(); if (!audioCtx) return; if (audioCtx.state === 'suspended') audioCtx.resume(); if (state.musicInterval) clearInterval(state.musicInterval); const tickMs = 220 * (1.0 / Math.max(0.75, difficultyConfig[state.difficulty].speed * 0.8)); state.musicInterval = setInterval(playMusicStep, tickMs); }
+      function stopMusic() { if (state.musicInterval) { clearInterval(state.musicInterval); state.musicInterval = null; } }
+      function showTitleScreen() { updateBestDisplay(); showScreen(startScreen); }
+      startBtn.addEventListener('click', startGame); retryBtn.addEventListener('click', startGame); menuBtn.addEventListener('click', () => { stopMusic(); showTitleScreen(); });
+      difficultyButtons.forEach(btn => btn.addEventListener('click', () => setDifficulty(btn.dataset.difficulty))); document.addEventListener('keydown', handleKeyPress); setDifficulty(state.difficulty); showTitleScreen();
+    </script>
+  </body>
+</html>
