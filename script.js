@@ -20,6 +20,7 @@ const difficultyConfig = {
     noteCount: 36,
     judgeWindow: { perfect: 60, great: 120, good: 170 },
     musicTempo: 120,
+    description: "Beginner Level",
   },
   NORMAL: {
     label: "NORMAL",
@@ -28,6 +29,7 @@ const difficultyConfig = {
     noteCount: 46,
     judgeWindow: { perfect: 60, great: 110, good: 155 },
     musicTempo: 140,
+    description: "Standard Level",
   },
   HARD: {
     label: "HARD",
@@ -36,6 +38,7 @@ const difficultyConfig = {
     noteCount: 58,
     judgeWindow: { perfect: 55, great: 100, good: 145 },
     musicTempo: 160,
+    description: "Advanced Level",
   },
   EXTREME: {
     label: "EXTREME",
@@ -44,6 +47,7 @@ const difficultyConfig = {
     noteCount: 72,
     judgeWindow: { perfect: 50, great: 95, good: 135 },
     musicTempo: 180,
+    description: "Expert Level",
   },
 };
 
@@ -76,9 +80,9 @@ const state = {
 };
 
 const trackMap = {
-  "NEON RUSH": { tempo: 124, theme: [220, 330, 440, 330, 277, 415, 554, 415] },
-  "MIDNIGHT DRIVE": { tempo: 138, theme: [164.81, 246.94, 329.63, 246.94, 196, 293.66, 392, 293.66] },
-  "CYBER DUSK": { tempo: 152, theme: [196, 293.66, 392, 293.66, 246.94, 369.99, 493.88, 369.99] },
+  "NEON RUSH": { tempo: 124, theme: [220, 330, 440, 330, 277, 415, 554, 415], artist: "Synth Wave" },
+  "MIDNIGHT DRIVE": { tempo: 138, theme: [164.81, 246.94, 329.63, 246.94, 196, 293.66, 392, 293.66], artist: "Cyber Pulse" },
+  "CYBER DUSK": { tempo: 152, theme: [196, 293.66, 392, 293.66, 246.94, 369.99, 493.88, 369.99], artist: "Digital Dream" },
 };
 
 const startScreen = document.getElementById("startScreen");
@@ -110,6 +114,19 @@ const retryBtn = document.getElementById("retryBtn");
 const menuBtn = document.getElementById("menuBtn");
 const chartStatusEl = document.getElementById("chartStatus");
 
+// ============== STATE INITIALIZATION ==============
+function initializeState() {
+  state.difficulty = "NORMAL";
+  state.playing = false;
+  state.paused = false;
+  state.currentTrack = TRACK_SEQUENCE[0];
+  state.trackIndex = 0;
+  setDifficulty(state.difficulty);
+  updateBestDisplay();
+  menuSongNameEl.textContent = `${state.currentTrack} // BGM LOOP`;
+}
+
+// ============== UI MANAGEMENT ==============
 function setDifficulty(name) {
   state.difficulty = name;
   difficultyButtons.forEach((btn) => {
@@ -123,6 +140,20 @@ function showScreen(target) {
   });
 }
 
+function updateChartStatus(text) {
+  if (chartStatusEl) {
+    chartStatusEl.textContent = text;
+  }
+}
+
+function updateHud() {
+  scoreEl.textContent = String(state.score);
+  comboEl.textContent = String(state.combo);
+  accuracyEl.textContent = `${state.accuracy.toFixed(1)}%`;
+  updatePerformanceChart();
+}
+
+// ============== SCORE & ACCURACY ==============
 function getBestScore() {
   return Number(localStorage.getItem("arrowBeatBestScore") || 0);
 }
@@ -137,25 +168,6 @@ function saveBestScore() {
 
 function updateBestDisplay() {
   bestScoreDisplay.textContent = String(getBestScore());
-}
-
-function getNextTrack() {
-  state.trackIndex = (state.trackIndex + 1) % TRACK_SEQUENCE.length;
-  state.currentTrack = TRACK_SEQUENCE[state.trackIndex];
-  return state.currentTrack;
-}
-
-function updateChartStatus(text) {
-  if (chartStatusEl) {
-    chartStatusEl.textContent = text;
-  }
-}
-
-function updateHud() {
-  scoreEl.textContent = String(state.score);
-  comboEl.textContent = String(state.combo);
-  accuracyEl.textContent = `${state.accuracy.toFixed(1)}%`;
-  updatePerformanceChart();
 }
 
 function getRank() {
@@ -173,15 +185,14 @@ function updateAccuracy() {
   state.accuracy = Number.isFinite(value) ? Math.min(100, value) : 100;
 }
 
-function showJudgementPopup(text) {
-  const popup = document.createElement("div");
-  popup.className = "hit-popup";
-  popup.textContent = text;
-  popup.style.color = text === "PERFECT" ? "#7ef7bf" : text === "GREAT" ? "#63f5ff" : text === "GOOD" ? "#ffe36b" : "#ff637d";
-  noteField.appendChild(popup);
-  setTimeout(() => popup.remove(), 660);
+// ============== TRACK MANAGEMENT ==============
+function getNextTrack() {
+  state.trackIndex = (state.trackIndex + 1) % TRACK_SEQUENCE.length;
+  state.currentTrack = TRACK_SEQUENCE[state.trackIndex];
+  return state.currentTrack;
 }
 
+// ============== NOTE GENERATION ==============
 function generatePattern() {
   const cfg = difficultyConfig[state.difficulty];
   const patterns = [
@@ -248,6 +259,7 @@ function spawnNotes() {
   state.notes.sort((a, b) => a.time - b.time);
 }
 
+// ============== GAME STATE RESET ==============
 function resetGameState() {
   state.notes = [];
   state.score = 0;
@@ -267,9 +279,30 @@ function resetGameState() {
   state.performanceHistory = [];
   noteField.innerHTML = "";
   pauseOverlay.classList.add("hidden");
+  pauseBtn.textContent = "PAUSE";
   updateChartStatus("LIVE");
   updateHud();
   updatePerformanceChart();
+}
+
+function cleanupGame() {
+  if (state.animationId) {
+    cancelAnimationFrame(state.animationId);
+    state.animationId = null;
+  }
+  stopMusic();
+  state.playing = false;
+  state.paused = false;
+}
+
+// ============== JUDGMENT & SCORING ==============
+function showJudgementPopup(text) {
+  const popup = document.createElement("div");
+  popup.className = "hit-popup";
+  popup.textContent = text;
+  popup.style.color = text === "PERFECT" ? "#7ef7bf" : text === "GREAT" ? "#63f5ff" : text === "GOOD" ? "#ffe36b" : "#ff637d";
+  noteField.appendChild(popup);
+  setTimeout(() => popup.remove(), 660);
 }
 
 function judgeNote(direction) {
@@ -287,7 +320,12 @@ function judgeNote(direction) {
     return best;
   }, null);
 
-  const delta = target ? target.delta : Infinity;
+  if (!target) {
+    handleMissByInput();
+    return;
+  }
+
+  const delta = target.delta;
   const windowCfg = difficultyConfig[state.difficulty].judgeWindow;
 
   let judgement = "MISS";
@@ -302,7 +340,6 @@ function judgeNote(direction) {
 
   target.note.judged = true;
   target.note.element.classList.add("hit");
-  target.note.element.style.filter = "brightness(1.5)";
 
   const scoreMap = { PERFECT: 1000, GREAT: 700, GOOD: 400 };
   const comboBonus = Math.min(state.combo * 25, 500);
@@ -346,6 +383,7 @@ function handleMissByInput() {
   updateHud();
 }
 
+// ============== ANIMATION & CHART ==============
 function animateNotes() {
   const cfg = difficultyConfig[state.difficulty];
   const travelDuration = 1900 / cfg.speed;
@@ -429,14 +467,11 @@ function pushPerformanceSample() {
   updatePerformanceChart();
 }
 
+// ============== GAME FLOW ==============
 function finishGame() {
   if (!state.playing) return;
 
-  state.playing = false;
-  state.paused = false;
-  cancelAnimationFrame(state.animationId);
-  state.animationId = null;
-  stopMusic();
+  cleanupGame();
   saveBestScore();
 
   finalScoreEl.textContent = String(state.score);
@@ -452,18 +487,16 @@ function finishGame() {
   showScreen(resultScreen);
 }
 
-function prepareStart() {
-  cancelAnimationFrame(state.animationId);
-  stopMusic();
-  resetGameState();
-}
-
 function startGame() {
-  prepareStart();
+  cleanupGame();
+  resetGameState();
+  
   const track = getNextTrack();
   state.currentTrack = track;
+  const trackInfo = trackMap[track];
   songNameEl.textContent = `${track} // ${state.difficulty}`;
   menuSongNameEl.textContent = `${track} // BGM LOOP`;
+  
   spawnNotes();
   showScreen(gameScreen);
   state.playing = true;
@@ -484,7 +517,8 @@ function gameLoop(timestamp) {
 
   animateNotes();
 
-  if (state.currentTime > state.notes[state.notes.length - 1]?.time + 4000) {
+  const lastNote = state.notes[state.notes.length - 1];
+  if (lastNote && state.currentTime > lastNote.time + 4000) {
     finishGame();
     return;
   }
@@ -492,6 +526,7 @@ function gameLoop(timestamp) {
   state.animationId = requestAnimationFrame(gameLoop);
 }
 
+// ============== INPUT HANDLING ==============
 function getActiveLaneElement(direction) {
   return document.querySelector(`.lane[data-key="${direction}"]`);
 }
@@ -499,6 +534,7 @@ function getActiveLaneElement(direction) {
 function flashLane(direction) {
   const lane = getActiveLaneElement(direction);
   const guide = document.querySelector(`.guide-key[data-key="${direction}"]`);
+  
   if (lane) lane.style.filter = "brightness(1.45)";
   if (guide) guide.classList.add("active");
 
@@ -513,6 +549,7 @@ function handleKeyPress(event) {
 
   const key = event.key.toLowerCase();
   const normalized = KEY_TO_LANE[event.key] || KEY_TO_LANE[key] || null;
+  
   if (event.key === "p" || event.key === "P") {
     togglePause();
     return;
@@ -542,6 +579,7 @@ function bindTouchInputs() {
   });
 }
 
+// ============== AUDIO ==============
 function initAudio() {
   const AudioCtx = window.AudioContext || window.webkitAudioContext;
   if (!AudioCtx) return null;
@@ -557,27 +595,32 @@ function playTone(frequency, duration = 0.12, volume = 0.06, type = "square") {
   const audioCtx = initAudio();
   if (!audioCtx) return;
 
-  const oscillator = audioCtx.createOscillator();
-  const gainNode = audioCtx.createGain();
+  try {
+    const oscillator = audioCtx.createOscillator();
+    const gainNode = audioCtx.createGain();
 
-  oscillator.type = type;
-  oscillator.frequency.value = frequency;
+    oscillator.type = type;
+    oscillator.frequency.value = frequency;
 
-  gainNode.gain.setValueAtTime(0.0001, audioCtx.currentTime);
-  gainNode.gain.exponentialRampToValueAtTime(volume, audioCtx.currentTime + 0.02);
-  gainNode.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime + duration);
+    gainNode.gain.setValueAtTime(0.0001, audioCtx.currentTime);
+    gainNode.gain.exponentialRampToValueAtTime(volume, audioCtx.currentTime + 0.02);
+    gainNode.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime + duration);
 
-  oscillator.connect(gainNode);
-  gainNode.connect(audioCtx.destination);
+    oscillator.connect(gainNode);
+    gainNode.connect(audioCtx.destination);
 
-  oscillator.start(audioCtx.currentTime);
-  oscillator.stop(audioCtx.currentTime + duration);
+    oscillator.start(audioCtx.currentTime);
+    oscillator.stop(audioCtx.currentTime + duration);
+  } catch (e) {
+    console.warn("Audio playback error:", e);
+  }
 }
 
 function playMusicStep() {
   const track = trackMap[state.currentTrack] || trackMap["NEON RUSH"];
+  if (!track) return;
+  
   const row = track.theme;
-
   row.forEach((freq, idx) => {
     const delay = idx * 0.03;
     setTimeout(() => {
@@ -596,8 +639,10 @@ function startMusic() {
     audioCtx.resume();
   }
 
-  if (state.musicInterval) clearInterval(state.musicInterval);
+  stopMusic();
   const track = trackMap[state.currentTrack] || trackMap["NEON RUSH"];
+  if (!track) return;
+  
   const tickMs = (60000 / track.tempo) * 0.52;
   state.musicInterval = setInterval(playMusicStep, tickMs);
 }
@@ -609,6 +654,7 @@ function stopMusic() {
   }
 }
 
+// ============== PAUSE/RESUME ==============
 function togglePause() {
   if (!state.playing) return;
 
@@ -617,7 +663,10 @@ function togglePause() {
   pauseBtn.textContent = state.paused ? "RESUME" : "PAUSE";
 
   if (state.paused) {
-    cancelAnimationFrame(state.animationId);
+    if (state.animationId) {
+      cancelAnimationFrame(state.animationId);
+      state.animationId = null;
+    }
     updateChartStatus("PAUSED");
     return;
   }
@@ -627,8 +676,11 @@ function togglePause() {
   state.animationId = requestAnimationFrame(gameLoop);
 }
 
+// ============== PARTICLES ==============
 function initParticles() {
   const canvas = document.getElementById("bgParticles");
+  if (!canvas) return;
+  
   const ctx = canvas.getContext("2d");
   state.particleCanvas = canvas;
 
@@ -672,18 +724,19 @@ function initParticles() {
   window.addEventListener("resize", resize);
 }
 
+// ============== INITIALIZATION ==============
 function showTitleScreen() {
   updateBestDisplay();
-  menuSongNameEl.textContent = `${state.currentTrack || "NEON RUSH"} // BGM LOOP`;
+  menuSongNameEl.textContent = `${state.currentTrack} // BGM LOOP`;
   updateChartStatus("READY");
   showScreen(startScreen);
 }
 
+// ============== EVENT LISTENERS ==============
 startBtn.addEventListener("click", startGame);
 retryBtn.addEventListener("click", startGame);
 menuBtn.addEventListener("click", () => {
-  stopMusic();
-  state.playing = false;
+  cleanupGame();
   showTitleScreen();
 });
 pauseBtn.addEventListener("click", () => togglePause());
@@ -695,10 +748,8 @@ difficultyButtons.forEach((btn) => {
 
 document.addEventListener("keydown", handleKeyPress);
 
-setDifficulty(state.difficulty);
-state.currentTrack = TRACK_SEQUENCE[0];
-state.trackIndex = 0;
-menuSongNameEl.textContent = `${state.currentTrack} // BGM LOOP`;
+// ============== START APPLICATION ==============
+initializeState();
 initParticles();
 bindTouchInputs();
 showTitleScreen();

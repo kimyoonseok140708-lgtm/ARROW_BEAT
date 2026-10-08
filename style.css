@@ -1,4 +1,3 @@
-/* UI polish + responsive polish for ARROW BEAT */
 :root {
   --bg: #050816;
   --bg-2: #0b1024;
@@ -61,6 +60,7 @@ button {
   inset: 0;
   background: linear-gradient(180deg, rgba(99,245,255,0.06), transparent 30%, transparent 70%, rgba(203,125,255,0.06));
   pointer-events: none;
+  z-index: 1;
 }
 
 .bg-particles,
@@ -68,9 +68,6 @@ button {
   position: absolute;
   inset: 0;
   pointer-events: none;
-}
-
-.bg-particles {
   z-index: 0;
 }
 
@@ -102,6 +99,7 @@ button {
   background: linear-gradient(180deg, rgba(12, 18, 31, 0.88), rgba(5, 8, 17, 0.94));
   border: 3px solid rgba(99, 245, 255, 0.25);
   box-shadow: 0 0 0 3px rgba(99,245,255,0.1), inset 0 0 12px rgba(99,245,255,0.12), 0 15px 30px rgba(0,0,0,0.35);
+  border-radius: 18px;
 }
 
 #startScreen {
@@ -117,7 +115,6 @@ button {
   align-items: center;
   justify-content: center;
   gap: 18px;
-  border-radius: 18px;
 }
 
 .logo-wrap {
@@ -143,6 +140,7 @@ button {
   flex-direction: column;
   align-items: center;
   gap: 18px;
+  width: 100%;
 }
 
 .song-chip {
@@ -194,6 +192,7 @@ button {
   flex-direction: column;
   align-items: center;
   gap: 12px;
+  width: 100%;
 }
 
 .panel-label {
@@ -264,6 +263,7 @@ button {
 .song-indicator .label {
   font-size: 0.6rem;
   letter-spacing: 0.18rem;
+  text-transform: uppercase;
 }
 
 .song-indicator strong {
@@ -281,6 +281,13 @@ button {
   cursor: pointer;
   touch-action: manipulation;
   border-radius: 8px;
+  font-weight: 700;
+  transition: all 0.15s ease;
+}
+
+.pause-btn:hover {
+  border-color: rgba(99,245,255,0.7);
+  background: rgba(10, 14, 25, 0.92);
 }
 
 .hud {
@@ -307,6 +314,7 @@ button {
   letter-spacing: 0.14rem;
   font-size: 0.7rem;
   margin-bottom: 6px;
+  text-transform: uppercase;
 }
 
 .hud-box span:last-child {
@@ -331,6 +339,7 @@ button {
   font-size: 0.68rem;
   letter-spacing: 0.12rem;
   margin-bottom: 8px;
+  text-transform: uppercase;
 }
 
 #performanceChart {
@@ -345,7 +354,7 @@ button {
 .playfield-shell {
   width: min(860px, 92%);
   padding: 16px 18px 18px;
-  border-radius: 18px;
+  margin: 0 auto;
 }
 
 .judgement-area {
@@ -367,6 +376,7 @@ button {
   height: 2px;
   background: linear-gradient(90deg, transparent, rgba(99,245,255,0.7), transparent);
   box-shadow: 0 0 16px rgba(99,245,255,0.44);
+  pointer-events: none;
 }
 
 .judgement-line {
@@ -377,6 +387,7 @@ button {
   height: 4px;
   background: linear-gradient(90deg, transparent, rgba(234,248,255,0.95), transparent);
   box-shadow: 0 0 18px rgba(234,248,255,0.8);
+  pointer-events: none;
 }
 
 .note-field {
@@ -397,6 +408,7 @@ button {
   top: 18px;
   height: 35px;
   align-items: center;
+  z-index: 1;
 }
 
 .lane-name {
@@ -416,7 +428,7 @@ button {
   background: rgba(5, 8, 16, 0.14);
   cursor: pointer;
   touch-action: manipulation;
-  transition: transform 0.1s ease, filter 0.12s ease;
+  transition: filter 0.12s ease;
 }
 
 .lane:hover {
@@ -435,6 +447,7 @@ button {
   top: 0;
   bottom: 0;
   background: linear-gradient(180deg, transparent, rgba(255,255,255,0.04), transparent);
+  pointer-events: none;
 }
 
 .note {
@@ -475,6 +488,7 @@ button {
   text-shadow: 0 0 12px rgba(255,255,255,0.7);
   animation: popupFloat 0.7s ease forwards;
   pointer-events: none;
+  z-index: 10;
 }
 
 @keyframes popupFloat {
@@ -506,6 +520,10 @@ button {
   border-radius: 8px;
 }
 
+.guide-key:hover {
+  border-color: rgba(99, 245, 255, 0.3);
+}
+
 .guide-key.active {
   border-color: var(--cyan);
   box-shadow: 0 0 16px rgba(99, 245, 255, 0.4);
@@ -519,6 +537,7 @@ button {
   justify-content: center;
   background: rgba(5, 8, 18, 0.5);
   z-index: 10;
+  backdrop-filter: blur(2px);
 }
 
 .pause-overlay.hidden {
@@ -529,7 +548,6 @@ button {
   width: min(420px, 70%);
   padding: 26px 22px;
   text-align: center;
-  border-radius: 18px;
 }
 
 .pause-panel h2 {
@@ -551,7 +569,6 @@ button {
 .result-panel {
   width: min(700px, 88%);
   padding: 26px 22px 18px;
-  border-radius: 18px;
 }
 
 .result-panel h1 {
@@ -582,6 +599,8 @@ button {
 .result-item span {
   color: var(--muted);
   letter-spacing: 0.08rem;
+  text-transform: uppercase;
+  font-size: 0.75rem;
 }
 
 .result-item strong {
@@ -633,5 +652,15 @@ button {
 
   .song-indicator strong {
     font-size: 0.95rem;
+  }
+
+  .difficulty-buttons {
+    gap: 8px;
+  }
+
+  .difficulty-btn {
+    min-width: 90px;
+    padding: 8px 10px;
+    font-size: 0.85rem;
   }
 }
