@@ -1,0 +1,24 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 800" preserveAspectRatio="xMidYMid slice">
+  <defs>
+    <linearGradient id="bg" x1="0" x2="1" y1="0" y2="1">
+      <stop offset="0%" stop-color="#071120"/>
+      <stop offset="50%" stop-color="#0d1730"/>
+      <stop offset="100%" stop-color="#050b18"/>
+    </linearGradient>
+    <linearGradient id="gridGlow" x1="0" x2="1" y1="0" y2="0">
+      <stop offset="0%" stop-color="#63f5ff" stop-opacity="0.2"/>
+      <stop offset="50%" stop-color="#cb7dff" stop-opacity="0.18"/>
+      <stop offset="100%" stop-color="#63f5ff" stop-opacity="0.2"/>
+    </linearGradient>
+  </defs>
+  <rect width="1200" height="800" fill="url(#bg)"/>
+  <g opacity="0.35" stroke="url(#gridGlow)" stroke-width="1">
+    <path d="M0 100H1200M0 200H1200M0 300H1200M0 400H1200M0 500H1200M0 600H1200M0 700H1200"/>
+    <path d="M150 0V800M300 0V800M450 0V800M600 0V800M750 0V800M900 0V800M1050 0V800"/>
+  </g>
+  <g opacity="0.5">
+    <circle cx="200" cy="160" r="110" fill="#63f5ff" opacity="0.08"/>
+    <circle cx="980" cy="560" r="150" fill="#cb7dff" opacity="0.08"/>
+    <circle cx="630" cy="250" r="170" fill="#ffe36b" opacity="0.05"/>
+  </g>
+</svg>

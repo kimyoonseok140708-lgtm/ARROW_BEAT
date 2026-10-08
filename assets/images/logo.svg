@@ -1,0 +1,24 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 920 260" role="img" aria-label="ARROW BEAT logo">
+  <defs>
+    <linearGradient id="g1" x1="0" x2="1">
+      <stop offset="0%" stop-color="#63f5ff"/>
+      <stop offset="40%" stop-color="#7ef7bf"/>
+      <stop offset="100%" stop-color="#cb7dff"/>
+    </linearGradient>
+    <linearGradient id="g2" x1="0" x2="1">
+      <stop offset="0%" stop-color="#ffe36b"/>
+      <stop offset="100%" stop-color="#ff7eb7"/>
+    </linearGradient>
+  </defs>
+  <rect width="920" height="260" fill="none"/>
+  <g fill="none" stroke-linecap="square" stroke-linejoin="miter">
+    <path d="M70 180L120 60L170 180Z" fill="#63f5ff" opacity="0.9"/>
+    <path d="M180 180L230 60L280 180Z" fill="#7ef7bf" opacity="0.9"/>
+    <path d="M290 180L340 60L390 180Z" fill="#ffe36b" opacity="0.9"/>
+    <path d="M400 180L450 60L500 180Z" fill="#ff7eb7" opacity="0.9"/>
+  </g>
+  <g font-family="Verdana, Arial, sans-serif" font-weight="900" letter-spacing="6" fill="url(#g1)">
+    <text x="540" y="126" font-size="82">ARROW</text>
+    <text x="540" y="208" font-size="82" fill="url(#g2)">BEAT</text>
+  </g>
+</svg>

@@ -1,0 +1,38 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 820 420" role="img" aria-label="ARROW BEAT panel">
+  <defs>
+    <linearGradient id="panelBg" x1="0" x2="1">
+      <stop offset="0%" stop-color="#0b1222"/>
+      <stop offset="100%" stop-color="#0e1d33"/>
+    </linearGradient>
+    <linearGradient id="lineGlow" x1="0" x2="1">
+      <stop offset="0%" stop-color="#63f5ff"/>
+      <stop offset="33%" stop-color="#7ef7bf"/>
+      <stop offset="66%" stop-color="#ffe36b"/>
+      <stop offset="100%" stop-color="#ff7eb7"/>
+    </linearGradient>
+  </defs>
+  <rect width="820" height="420" rx="12" fill="url(#panelBg)"/>
+  <g stroke="url(#lineGlow)" stroke-width="2" opacity="0.75">
+    <path d="M30 70H790M30 350H790M35 100V320M785 100V320"/>
+  </g>
+  <g fill="#63f5ff">
+    <rect x="70" y="110" width="120" height="28"/>
+    <rect x="70" y="180" width="120" height="28"/>
+    <rect x="70" y="250" width="120" height="28"/>
+  </g>
+  <g fill="#7ef7bf">
+    <rect x="210" y="110" width="120" height="28"/>
+    <rect x="210" y="180" width="120" height="28"/>
+    <rect x="210" y="250" width="120" height="28"/>
+  </g>
+  <g fill="#ffe36b">
+    <rect x="350" y="110" width="120" height="28"/>
+    <rect x="350" y="180" width="120" height="28"/>
+    <rect x="350" y="250" width="120" height="28"/>
+  </g>
+  <g fill="#ff7eb7">
+    <rect x="490" y="110" width="120" height="28"/>
+    <rect x="490" y="180" width="120" height="28"/>
+    <rect x="490" y="250" width="120" height="28"/>
+  </g>
+</svg>

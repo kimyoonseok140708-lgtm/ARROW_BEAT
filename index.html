@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="ko">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>ARROW BEAT</title>
+    <link rel="stylesheet" href="style.css" />
+  </head>
+  <body>
+    <div class="game-shell">
+      <div id="bgGlow" class="bg-glow"></div>
+
+      <div id="startScreen" class="screen active">
+        <div class="title-panel pixel-panel">
+          <div class="logo-wrap">
+            <img src="assets/images/logo.svg" alt="ARROW BEAT logo" class="logo-image" />
+          </div>
+
+          <div class="start-controls">
+            <button id="startBtn" class="pixel-btn primary">START</button>
+
+            <div class="difficulty-panel">
+              <span class="panel-label">DIFFICULTY</span>
+              <div class="difficulty-buttons">
+                <button class="difficulty-btn active" data-difficulty="EASY">EASY</button>
+                <button class="difficulty-btn" data-difficulty="NORMAL">NORMAL</button>
+                <button class="difficulty-btn" data-difficulty="HARD">HARD</button>
+                <button class="difficulty-btn" data-difficulty="EXTREME">EXTREME</button>
+              </div>
+            </div>
+
+            <div class="best-score-box">
+              <span class="panel-label">BEST SCORE</span>
+              <strong id="bestScoreDisplay">0</strong>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div id="gameScreen" class="screen">
+        <div class="hud">
+          <div class="hud-box">
+            <span class="label">SCORE</span>
+            <span id="score">0</span>
+          </div>
+          <div class="hud-box">
+            <span class="label">COMBO</span>
+            <span id="combo">0</span>
+          </div>
+          <div class="hud-box">
+            <span class="label">ACCURACY</span>
+            <span id="accuracy">100.0%</span>
+          </div>
+        </div>
+
+        <div class="playfield-shell pixel-panel">
+          <div class="judgement-area">
+            <div class="top-scanline"></div>
+            <div class="judgement-line"></div>
+            <div id="noteField" class="note-field"></div>
+
+            <div class="lane-labels">
+              <div class="lane-name left">← A</div>
+              <div class="lane-name up">↑ W</div>
+              <div class="lane-name down">↓ S</div>
+              <div class="lane-name right">→ D</div>
+            </div>
+
+            <div class="lanes">
+              <div class="lane left" data-key="left"><div class="lane-accent"></div></div>
+              <div class="lane up" data-key="up"><div class="lane-accent"></div></div>
+              <div class="lane down" data-key="down"><div class="lane-accent"></div></div>
+              <div class="lane right" data-key="right"><div class="lane-accent"></div></div>
+            </div>
+          </div>
+
+          <div class="control-guide">
+            <div class="guide-key" data-key="left"><span>←</span><span>A</span></div>
+            <div class="guide-key" data-key="up"><span>↑</span><span>W</span></div>
+            <div class="guide-key" data-key="down"><span>↓</span><span>S</span></div>
+            <div class="guide-key" data-key="right"><span>→</span><span>D</span></div>
+          </div>
+        </div>
+      </div>
+
+      <div id="resultScreen" class="screen">
+        <div class="result-panel pixel-panel">
+          <h1>RESULT</h1>
+
+          <div class="result-grid">
+            <div class="result-item"><span>SCORE</span><strong id="finalScore">0</strong></div>
+            <div class="result-item"><span>ACCURACY</span><strong id="finalAccuracy">0%</strong></div>
+            <div class="result-item"><span>MAX COMBO</span><strong id="finalMaxCombo">0</strong></div>
+            <div class="result-item"><span>RANK</span><strong id="finalRank">-</strong></div>
+            <div class="result-item"><span>PERFECT</span><strong id="countPerfect">0</strong></div>
+            <div class="result-item"><span>GREAT</span><strong id="countGreat">0</strong></div>
+            <div class="result-item"><span>GOOD</span><strong id="countGood">0</strong></div>
+            <div class="result-item"><span>MISS</span><strong id="countMiss">0</strong></div>
+          </div>
+
+          <div class="result-actions">
+            <button id="retryBtn" class="pixel-btn primary">RETRY</button>
+            <button id="menuBtn" class="pixel-btn">MENU</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <script src="script.js"></script>
+  </body>
+</html>
