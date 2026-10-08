@@ -8,6 +8,7 @@
   </head>
   <body>
     <div class="game-shell">
+      <canvas id="bgParticles" class="bg-particles"></canvas>
       <div id="bgGlow" class="bg-glow"></div>
 
       <div id="startScreen" class="screen active">
@@ -17,6 +18,7 @@
           </div>
 
           <div class="start-controls">
+            <div class="song-chip">NEON RUSH // BGM LOOP</div>
             <button id="startBtn" class="pixel-btn primary">START</button>
 
             <div class="difficulty-panel">
@@ -38,6 +40,11 @@
       </div>
 
       <div id="gameScreen" class="screen">
+        <div class="top-bar">
+          <div class="song-indicator"><span class="label">SONG</span><strong id="songName">NEON RUSH</strong></div>
+          <button id="pauseBtn" class="pause-btn">PAUSE</button>
+        </div>
+
         <div class="hud">
           <div class="hud-box">
             <span class="label">SCORE</span>
@@ -88,6 +95,14 @@
             <div class="guide-key" data-key="down"><span>↓</span><span>S</span></div>
             <div class="guide-key" data-key="right"><span>→</span><span>D</span></div>
           </div>
+        </div>
+      </div>
+
+      <div id="pauseOverlay" class="pause-overlay hidden">
+        <div class="pause-panel pixel-panel">
+          <h2>PAUSED</h2>
+          <p>Press P or tap resume</p>
+          <button id="resumeBtn" class="pixel-btn primary">RESUME</button>
         </div>
       </div>
 

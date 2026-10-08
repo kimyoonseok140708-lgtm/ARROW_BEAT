@@ -48,6 +48,7 @@ const difficultyConfig = {
 const state = {
   difficulty: "NORMAL",
   playing: false,
+  paused: false,
   notes: [],
   score: 0,
   combo: 0,
@@ -65,22 +66,25 @@ const state = {
   audioCtx: null,
   musicInterval: null,
   beatIndex: 0,
-  pattern: [],
   performanceHistory: [],
+  particleCanvas: null,
+  particles: [],
 };
 
 const startScreen = document.getElementById("startScreen");
 const gameScreen = document.getElementById("gameScreen");
 const resultScreen = document.getElementById("resultScreen");
+const pauseOverlay = document.getElementById("pauseOverlay");
 const noteField = document.getElementById("noteField");
 const chartCanvas = document.getElementById("performanceChart");
 const chartCtx = chartCanvas.getContext("2d");
-
+const songNameEl = document.getElementById("songName");
+const pauseBtn = document.getElementById("pauseBtn");
+const resumeBtn = document.getElementById("resumeBtn");
 const scoreEl = document.getElementById("score");
 const comboEl = document.getElementById("combo");
 const accuracyEl = document.getElementById("accuracy");
 const bestScoreDisplay = document.getElementById("bestScoreDisplay");
-
 const finalScoreEl = document.getElementById("finalScore");
 const finalAccuracyEl = document.getElementById("finalAccuracy");
 const finalMaxComboEl = document.getElementById("finalMaxCombo");
@@ -89,7 +93,6 @@ const countPerfectEl = document.getElementById("countPerfect");
 const countGreatEl = document.getElementById("countGreat");
 const countGoodEl = document.getElementById("countGood");
 const countMissEl = document.getElementById("countMiss");
-
 const difficultyButtons = document.querySelectorAll(".difficulty-btn");
 const startBtn = document.getElementById("startBtn");
 const retryBtn = document.getElementById("retryBtn");
@@ -142,24 +145,17 @@ function getRank() {
 
 function updateAccuracy() {
   const denominator = Math.max(1, state.totalJudged);
-  const accuracy = ((state.hitScoreTotal / (denominator * 100)) * 100);
-  state.accuracy = Number.isFinite(accuracy) ? Math.min(100, accuracy) : 100;
+  const value = ((state.hitScoreTotal / (denominator * 100)) * 100);
+  state.accuracy = Number.isFinite(value) ? Math.min(100, value) : 100;
 }
 
 function showJudgementPopup(text) {
   const popup = document.createElement("div");
   popup.className = "hit-popup";
   popup.textContent = text;
-  popup.style.color = getJudgementColor(text);
+  popup.style.color = text === "PERFECT" ? "#7ef7bf" : text === "GREAT" ? "#63f5ff" : text === "GOOD" ? "#ffe36b" : "#ff637d";
   noteField.appendChild(popup);
   setTimeout(() => popup.remove(), 660);
-}
-
-function getJudgementColor(text) {
-  if (text === "PERFECT") return "#7ef7bf";
-  if (text === "GREAT") return "#63f5ff";
-  if (text === "GOOD") return "#ffe36b";
-  return "#ff637d";
 }
 
 function generatePattern() {
@@ -178,9 +174,7 @@ function generatePattern() {
   ];
 
   const sequence = [];
-  const noteCount = cfg.noteCount;
-
-  for (let i = 0; i < noteCount; i++) {
+  for (let i = 0; i < cfg.noteCount; i++) {
     const pattern = patterns[Math.floor(Math.random() * patterns.length)];
     const burst = i % 4 === 0 ? 2 : 1;
     for (let b = 0; b < burst; b++) {
@@ -188,7 +182,7 @@ function generatePattern() {
     }
   }
 
-  return sequence.slice(0, noteCount);
+  return sequence.slice(0, cfg.noteCount);
 }
 
 function createNote(direction, time) {
@@ -203,23 +197,20 @@ function createNote(direction, time) {
 
   noteField.appendChild(note);
 
-  const noteData = {
+  state.notes.push({
     direction,
     time,
     judged: false,
     element: note,
-  };
-
-  state.notes.push(noteData);
-  return noteData;
+  });
 }
 
 function spawnNotes() {
   const cfg = difficultyConfig[state.difficulty];
-  state.pattern = generatePattern();
-
+  const pattern = generatePattern();
   let spawnTime = 900;
-  state.pattern.forEach((lane) => {
+
+  pattern.forEach((lane) => {
     createNote(lane, spawnTime);
     spawnTime += cfg.interval;
   });
@@ -242,14 +233,16 @@ function resetGameState() {
   state.currentTime = 0;
   state.lastTimestamp = 0;
   state.beatIndex = 0;
+  state.paused = false;
   state.performanceHistory = [];
   noteField.innerHTML = "";
+  pauseOverlay.classList.add("hidden");
   updateHud();
   updatePerformanceChart();
 }
 
 function judgeNote(direction) {
-  if (!state.playing) return;
+  if (!state.playing || state.paused) return;
 
   const laneNotes = state.notes.filter((note) => !note.judged && note.direction === direction);
   if (!laneNotes.length) {
@@ -350,7 +343,6 @@ function updatePerformanceChart() {
   const height = chartCanvas.height;
   chartCtx.clearRect(0, 0, width, height);
 
-  // Background grid
   chartCtx.strokeStyle = "rgba(255,255,255,0.08)";
   chartCtx.lineWidth = 1;
   for (let i = 0; i <= 4; i++) {
@@ -402,6 +394,7 @@ function pushPerformanceSample() {
 
 function finishGame() {
   state.playing = false;
+  state.paused = false;
   cancelAnimationFrame(state.animationId);
   stopMusic();
   saveBestScore();
@@ -423,12 +416,15 @@ function startGame() {
   spawnNotes();
   showScreen(gameScreen);
   state.playing = true;
+  state.paused = false;
   startMusic();
+  songNameEl.textContent = `NEON RUSH // ${state.difficulty}`;
   state.animationId = requestAnimationFrame(gameLoop);
 }
 
 function gameLoop(timestamp) {
   if (!state.playing) return;
+  if (state.paused) return;
 
   if (!state.lastTimestamp) state.lastTimestamp = timestamp;
   const delta = timestamp - state.lastTimestamp;
@@ -464,8 +460,12 @@ function flashLane(direction) {
 function handleKeyPress(event) {
   const key = event.key.toLowerCase();
   const normalized = KEY_TO_LANE[event.key] || KEY_TO_LANE[key] || null;
-  if (!normalized) return;
+  if (event.key === "p" || event.key === "P") {
+    togglePause();
+    return;
+  }
 
+  if (!normalized) return;
   event.preventDefault();
   flashLane(normalized);
   judgeNote(normalized);
@@ -504,14 +504,16 @@ function playTone(frequency, duration = 0.12, volume = 0.06, type = "square") {
 }
 
 function playMusicStep() {
-  const pattern = [
+  const patterns = [
     [220, 330, 440, 330],
     [277, 415, 554, 415],
     [164.81, 246.94, 329.63, 246.94],
     [196, 293.66, 392, 293.66],
+    [246.94, 369.99, 493.88, 369.99],
+    [220, 277, 329.63, 392],
   ];
 
-  const row = pattern[state.beatIndex % pattern.length];
+  const row = patterns[state.beatIndex % patterns.length];
   row.forEach((freq, idx) => {
     const delay = idx * 0.03;
     setTimeout(() => {
@@ -542,6 +544,67 @@ function stopMusic() {
   }
 }
 
+function togglePause() {
+  if (!state.playing) return;
+
+  state.paused = !state.paused;
+  pauseOverlay.classList.toggle("hidden", !state.paused);
+  pauseBtn.textContent = state.paused ? "RESUME" : "PAUSE";
+
+  if (state.paused) {
+    cancelAnimationFrame(state.animationId);
+    return;
+  }
+
+  state.lastTimestamp = 0;
+  state.animationId = requestAnimationFrame(gameLoop);
+}
+
+function initParticles() {
+  const canvas = document.getElementById("bgParticles");
+  const ctx = canvas.getContext("2d");
+  state.particleCanvas = canvas;
+
+  function resize() {
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+  }
+
+  function makeParticles() {
+    const total = 50;
+    state.particles = Array.from({ length: total }, () => ({
+      x: Math.random() * canvas.width,
+      y: Math.random() * canvas.height,
+      r: Math.random() * 2.4 + 0.8,
+      vx: (Math.random() - 0.5) * 0.5,
+      vy: (Math.random() - 0.5) * 0.5,
+      alpha: Math.random() * 0.8 + 0.2,
+    }));
+  }
+
+  function drawParticles() {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    for (const p of state.particles) {
+      p.x += p.vx;
+      p.y += p.vy;
+      if (p.x < 0 || p.x > canvas.width) p.vx *= -1;
+      if (p.y < 0 || p.y > canvas.height) p.vy *= -1;
+
+      ctx.beginPath();
+      ctx.fillStyle = `rgba(99,245,255,${p.alpha})`;
+      ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
+      ctx.fill();
+    }
+
+    requestAnimationFrame(drawParticles);
+  }
+
+  resize();
+  makeParticles();
+  drawParticles();
+  window.addEventListener("resize", resize);
+}
+
 function showTitleScreen() {
   updateBestDisplay();
   showScreen(startScreen);
@@ -553,6 +616,8 @@ menuBtn.addEventListener("click", () => {
   stopMusic();
   showTitleScreen();
 });
+pauseBtn.addEventListener("click", () => togglePause());
+resumeBtn.addEventListener("click", () => togglePause());
 
 difficultyButtons.forEach((btn) => {
   btn.addEventListener("click", () => setDifficulty(btn.dataset.difficulty));
@@ -561,4 +626,5 @@ difficultyButtons.forEach((btn) => {
 document.addEventListener("keydown", handleKeyPress);
 
 setDifficulty(state.difficulty);
+initParticles();
 showTitleScreen();
