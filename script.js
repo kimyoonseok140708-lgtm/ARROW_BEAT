@@ -69,6 +69,13 @@ const state = {
   performanceHistory: [],
   particleCanvas: null,
   particles: [],
+  currentTrack: "NEON RUSH",
+};
+
+const trackMap = {
+  "NEON RUSH": { tempo: 124, theme: [220, 330, 440, 330, 277, 415, 554, 415] },
+  "MIDNIGHT DRIVE": { tempo: 138, theme: [164.81, 246.94, 329.63, 246.94, 196, 293.66, 392, 293.66] },
+  "CYBER DUSK": { tempo: 152, theme: [196, 293.66, 392, 293.66, 246.94, 369.99, 493.88, 369.99] },
 };
 
 const startScreen = document.getElementById("startScreen");
@@ -79,6 +86,7 @@ const noteField = document.getElementById("noteField");
 const chartCanvas = document.getElementById("performanceChart");
 const chartCtx = chartCanvas.getContext("2d");
 const songNameEl = document.getElementById("songName");
+const menuSongNameEl = document.getElementById("menuSongName");
 const pauseBtn = document.getElementById("pauseBtn");
 const resumeBtn = document.getElementById("resumeBtn");
 const scoreEl = document.getElementById("score");
@@ -127,6 +135,14 @@ function updateBestDisplay() {
   bestScoreDisplay.textContent = String(getBestScore());
 }
 
+function getNextTrack() {
+  const tracks = Object.keys(trackMap);
+  const currentIndex = tracks.indexOf(state.currentTrack);
+  const nextIndex = (currentIndex + 1) % tracks.length;
+  state.currentTrack = tracks[nextIndex];
+  return state.currentTrack;
+}
+
 function updateHud() {
   scoreEl.textContent = String(state.score);
   comboEl.textContent = String(state.combo);
@@ -145,7 +161,7 @@ function getRank() {
 
 function updateAccuracy() {
   const denominator = Math.max(1, state.totalJudged);
-  const value = ((state.hitScoreTotal / (denominator * 100)) * 100);
+  const value = (state.hitScoreTotal / (denominator * 100)) * 100;
   state.accuracy = Number.isFinite(value) ? Math.min(100, value) : 100;
 }
 
@@ -171,14 +187,20 @@ function generatePattern() {
     ["right", "down", "left", "up"],
     ["left", "down", "right", "up", "left"],
     ["up", "left", "up", "right", "down"],
+    ["left", "right", "left", "up", "down", "right"],
+    ["up", "left", "right", "down", "up", "left"],
   ];
 
   const sequence = [];
+  const baseIndex = Math.floor(state.beatIndex / 2) % patterns.length;
+
   for (let i = 0; i < cfg.noteCount; i++) {
-    const pattern = patterns[Math.floor(Math.random() * patterns.length)];
-    const burst = i % 4 === 0 ? 2 : 1;
-    for (let b = 0; b < burst; b++) {
-      sequence.push(pattern[Math.floor(Math.random() * pattern.length)]);
+    const pattern = patterns[(baseIndex + i) % patterns.length];
+    const pick = pattern[Math.floor(Math.random() * pattern.length)];
+    sequence.push(pick);
+
+    if (i % 4 === 0 && Math.random() > 0.45) {
+      sequence.push(pattern[(Math.floor(Math.random() * pattern.length) + 1) % pattern.length]);
     }
   }
 
@@ -208,7 +230,7 @@ function createNote(direction, time) {
 function spawnNotes() {
   const cfg = difficultyConfig[state.difficulty];
   const pattern = generatePattern();
-  let spawnTime = 900;
+  let spawnTime = 1200;
 
   pattern.forEach((lane) => {
     createNote(lane, spawnTime);
@@ -281,11 +303,17 @@ function judgeNote(direction) {
   state.combo += 1;
   state.maxCombo = Math.max(state.maxCombo, state.combo);
   state.totalJudged += 1;
-  state.hitScoreTotal += judgement === "PERFECT" ? 100 : judgement === "GREAT" ? 90 : 70;
 
-  if (judgement === "PERFECT") state.perfect += 1;
-  if (judgement === "GREAT") state.great += 1;
-  if (judgement === "GOOD") state.good += 1;
+  if (judgement === "PERFECT") {
+    state.perfect += 1;
+    state.hitScoreTotal += 100;
+  } else if (judgement === "GREAT") {
+    state.great += 1;
+    state.hitScoreTotal += 90;
+  } else {
+    state.good += 1;
+    state.hitScoreTotal += 70;
+  }
 
   showJudgementPopup(judgement);
   updateAccuracy();
@@ -413,12 +441,15 @@ function finishGame() {
 
 function startGame() {
   resetGameState();
+  const track = getNextTrack();
+  state.currentTrack = track;
+  songNameEl.textContent = `${track} // ${state.difficulty}`;
+  menuSongNameEl.textContent = `${track} // BGM LOOP`;
   spawnNotes();
   showScreen(gameScreen);
   state.playing = true;
   state.paused = false;
   startMusic();
-  songNameEl.textContent = `NEON RUSH // ${state.difficulty}`;
   state.animationId = requestAnimationFrame(gameLoop);
 }
 
@@ -458,6 +489,8 @@ function flashLane(direction) {
 }
 
 function handleKeyPress(event) {
+  if (event.repeat && event.key.toLowerCase() !== "p") return;
+
   const key = event.key.toLowerCase();
   const normalized = KEY_TO_LANE[event.key] || KEY_TO_LANE[key] || null;
   if (event.key === "p" || event.key === "P") {
@@ -469,6 +502,20 @@ function handleKeyPress(event) {
   event.preventDefault();
   flashLane(normalized);
   judgeNote(normalized);
+}
+
+function bindTouchInputs() {
+  document.querySelectorAll(".lane, .guide-key").forEach((element) => {
+    const direction = element.dataset.key;
+    if (!direction) return;
+
+    element.addEventListener("pointerdown", (event) => {
+      event.preventDefault();
+      if (!state.playing || state.paused) return;
+      flashLane(direction);
+      judgeNote(direction);
+    });
+  });
 }
 
 function initAudio() {
@@ -504,20 +551,13 @@ function playTone(frequency, duration = 0.12, volume = 0.06, type = "square") {
 }
 
 function playMusicStep() {
-  const patterns = [
-    [220, 330, 440, 330],
-    [277, 415, 554, 415],
-    [164.81, 246.94, 329.63, 246.94],
-    [196, 293.66, 392, 293.66],
-    [246.94, 369.99, 493.88, 369.99],
-    [220, 277, 329.63, 392],
-  ];
+  const track = trackMap[state.currentTrack] || trackMap["NEON RUSH"];
+  const row = track.theme;
 
-  const row = patterns[state.beatIndex % patterns.length];
   row.forEach((freq, idx) => {
     const delay = idx * 0.03;
     setTimeout(() => {
-      playTone(freq, 0.12, 0.05 + idx * 0.007, idx % 2 ? "triangle" : "square");
+      playTone(freq, 0.12, 0.05 + idx * 0.008, idx % 3 === 0 ? "triangle" : "square");
     }, delay * 1000);
   });
 
@@ -533,7 +573,8 @@ function startMusic() {
   }
 
   if (state.musicInterval) clearInterval(state.musicInterval);
-  const tickMs = 220 * (1.0 / Math.max(0.75, difficultyConfig[state.difficulty].speed * 0.8));
+  const track = trackMap[state.currentTrack] || trackMap["NEON RUSH"];
+  const tickMs = (60000 / track.tempo) * 0.52;
   state.musicInterval = setInterval(playMusicStep, tickMs);
 }
 
@@ -607,6 +648,9 @@ function initParticles() {
 
 function showTitleScreen() {
   updateBestDisplay();
+  if (!menuSongNameEl.textContent) {
+    menuSongNameEl.textContent = `${state.currentTrack} // BGM LOOP`;
+  }
   showScreen(startScreen);
 }
 
@@ -626,5 +670,8 @@ difficultyButtons.forEach((btn) => {
 document.addEventListener("keydown", handleKeyPress);
 
 setDifficulty(state.difficulty);
+state.currentTrack = "NEON RUSH";
+menuSongNameEl.textContent = `${state.currentTrack} // BGM LOOP`;
 initParticles();
+bindTouchInputs();
 showTitleScreen();

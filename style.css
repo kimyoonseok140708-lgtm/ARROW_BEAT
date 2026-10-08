@@ -54,6 +54,14 @@ button {
   box-shadow: 0 0 0 3px rgba(99, 245, 255, 0.26), 0 0 26px rgba(99, 245, 255, 0.18), inset 0 0 48px rgba(99, 245, 255, 0.06);
 }
 
+.game-shell::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(180deg, rgba(99,245,255,0.06), transparent 30%, transparent 70%, rgba(203,125,255,0.06));
+  pointer-events: none;
+}
+
 .bg-particles,
 .bg-glow {
   position: absolute;
@@ -77,10 +85,16 @@ button {
   align-items: center;
   justify-content: center;
   z-index: 2;
+  animation: fadeScreen 0.2s ease;
 }
 
 .screen.active {
   display: flex;
+}
+
+@keyframes fadeScreen {
+  0% { opacity: 0; transform: translateY(8px); }
+  100% { opacity: 1; transform: translateY(0); }
 }
 
 .pixel-panel {
@@ -152,12 +166,17 @@ button {
   letter-spacing: 0.16rem;
   cursor: pointer;
   transition: transform 0.15s ease, box-shadow 0.15s ease, filter 0.15s ease;
+  touch-action: manipulation;
 }
 
 .pixel-btn:hover {
   transform: translateY(-2px);
   filter: brightness(1.08);
   box-shadow: 0 0 18px rgba(99, 245, 255, 0.4);
+}
+
+.pixel-btn:active {
+  transform: translateY(0);
 }
 
 .pixel-btn.primary {
@@ -197,6 +216,7 @@ button {
   letter-spacing: 0.08rem;
   cursor: pointer;
   transition: all 0.15s ease;
+  touch-action: manipulation;
 }
 
 .difficulty-btn.active {
@@ -249,6 +269,7 @@ button {
   padding: 8px 12px;
   letter-spacing: 0.12rem;
   cursor: pointer;
+  touch-action: manipulation;
 }
 
 .hud {
@@ -377,6 +398,8 @@ button {
   border-left: 1px solid rgba(255,255,255,0.08);
   border-right: 1px solid rgba(255,255,255,0.06);
   background: rgba(5, 8, 16, 0.14);
+  cursor: pointer;
+  touch-action: manipulation;
 }
 
 .lane.left { box-shadow: inset 0 0 22px rgba(103, 217, 255, 0.22); }
@@ -457,6 +480,8 @@ button {
   font-weight: 800;
   letter-spacing: 0.08rem;
   transition: all 0.12s ease;
+  cursor: pointer;
+  touch-action: manipulation;
 }
 
 .guide-key.active {
